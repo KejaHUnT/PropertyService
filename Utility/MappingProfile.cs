@@ -29,10 +29,12 @@ namespace KejaHUnt_PropertiesAPI.Utility
                 .ForMember(dest => dest.OutDoorFeatures, opt => opt.MapFrom(src => src.OutdoorFeatures.Select(gf => gf.Id)))
                 .ForMember(dest => dest.IndoorFeatures, opt => opt.MapFrom(src => src.IndoorFeatures.Select(gf => gf.Id)))
                 .ReverseMap()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.GeneralFeatures, opt => opt.Ignore()) // Manual mapping later
                 .ForMember(dest => dest.OutdoorFeatures, opt => opt.Ignore()) // Manual mapping later
                 .ForMember(dest => dest.IndoorFeatures, opt => opt.Ignore()) // Manual mapping later
-                .ForMember(dest => dest.Units, opt => opt.Ignore()); // Manual mapping later
+                .ForMember(dest => dest.Units, opt => opt.Ignore()) // Manual mapping later
+                .ForMember(dest => dest.PolicyDescriptions, opt => opt.Ignore());
 
 
             CreateMap<Unit, UnitDto>().ReverseMap();

@@ -5,6 +5,7 @@ using KejaHUnt_PropertiesAPI.Utility;
 using Microsoft.EntityFrameworkCore;
 using Serilog.Events;
 using Serilog;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,18 @@ builder.Host.UseSerilog();
 
 
 // Add services to the container.
+// Add response compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<GzipCompressionProvider>();
+});
+
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = System.IO.Compression.CompressionLevel.Fastest;
+});
+
 builder.Services.AddDbContext<ApplicationDbContext>(options
     => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
@@ -40,6 +53,9 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 // Added for debuging ***********************************************************************
+
+app.UseResponseCompression();
+
 app.UseDeveloperExceptionPage();
 
 // Configure the HTTP request pipeline.
