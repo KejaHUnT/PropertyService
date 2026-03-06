@@ -41,9 +41,5 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             return Ok(new { message = "Property approved successfully." });
         }
 
-        private string GetCurrentUserId()
-        {
-            return User?.Claims?.FirstOrDefault(c => c.Type == "sub")?.Value ?? "unknown";
-        }
     }
 }
