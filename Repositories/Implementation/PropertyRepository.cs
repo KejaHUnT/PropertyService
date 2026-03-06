@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using KejaHUnt_PropertiesAPI.Data;
+using KejaHUnt_PropertiesAPI.Migrations;
 using KejaHUnt_PropertiesAPI.Models.Domain;
 using KejaHUnt_PropertiesAPI.Models.Dto;
 using KejaHUnt_PropertiesAPI.Repositories.Interface;
@@ -14,13 +15,15 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
         private readonly IMapper _mapper;
         private readonly IImageRepository _imageRepository;
         private readonly IFeatureRepository _featureRepository;
+        private readonly IUnitRepository _unitRepository;
 
-        public PropertyRepository(ApplicationDbContext dbContext, IMapper mapper, IImageRepository imageRepository, IFeatureRepository featureRepository)
+        public PropertyRepository(ApplicationDbContext dbContext, IMapper mapper, IImageRepository imageRepository, IFeatureRepository featureRepository, IUnitRepository unitRepository)
         {
             _dbContext = dbContext;
             _mapper = mapper;
             _imageRepository = imageRepository;
             _featureRepository = featureRepository;
+            _unitRepository = unitRepository;
         }
 
         public async Task<Property> AddAsync(Property property)
@@ -100,17 +103,16 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                 .Include(p => p.IndoorFeatures)
                 .Include(p => p.OutdoorFeatures)
                 .Include(p => p.Units)
+                .Include(p => p.PolicyDescriptions)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (property == null)
-            {
                 return null;
-            }
 
-            // Update scalar properties
-            _mapper.Map(request, property); // Map fields from request into the existing entity (excluding nav props)
+            // Map scalar fields (e.g., Name, Description, etc.)
+            _mapper.Map(request, property);
 
-            // Handle Image Upload/Update
+            // Handle image upload/update
             if (request.ImageFile != null)
             {
                 var newDocumentId = (request.DocumentId != null && request.DocumentId != Guid.Empty)
@@ -120,17 +122,20 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                 property.DocumentId = newDocumentId;
             }
 
-            // Clear and reassign features
+            // Clear and reassign feature collections
             property.GeneralFeatures?.Clear();
             property.IndoorFeatures?.Clear();
             property.OutdoorFeatures?.Clear();
 
+            // Fetch and reassign feature entities from database
             var generalFeatures = await _dbContext.GeneralFeatures
                 .Where(f => request.GeneralFeatures.Contains(f.Id))
                 .ToListAsync();
+
             var indoorFeatures = await _dbContext.IndoorFeatures
                 .Where(f => request.IndoorFeatures.Contains(f.Id))
                 .ToListAsync();
+
             var outdoorFeatures = await _dbContext.OutDoorFeatures
                 .Where(f => request.OutDoorFeatures.Contains(f.Id))
                 .ToListAsync();
@@ -139,7 +144,13 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             property.IndoorFeatures = indoorFeatures;
             property.OutdoorFeatures = outdoorFeatures;
 
-            // Handle PolicyDescriptions
+            // Remove existing PolicyDescriptions from database
+            if (property.PolicyDescriptions != null && property.PolicyDescriptions.Any())
+            {
+                _dbContext.PolicyDescriptions.RemoveRange(property.PolicyDescriptions);
+            }
+
+            // Add new PolicyDescriptions
             if (!string.IsNullOrWhiteSpace(request.PolicyDescriptions))
             {
                 try
@@ -150,7 +161,14 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                     {
                         foreach (var policy in policies)
                         {
-                            await _featureRepository.CreatePolicyDescriptionAsync(policy);
+                            var newPolicy = new PolicyDescription
+                            {
+                                Name = policy.Name,
+                                PolicyId = policy.PolicyId,
+                                PropertyId = property.Id
+                            };
+
+                            _dbContext.PolicyDescriptions.Add(newPolicy);
                         }
                     }
                 }
@@ -160,12 +178,73 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(request.Units))
+            {
+                try
+                {
+                    var unitDtos = JsonConvert.DeserializeObject<List<UnitDto>>(request.Units);
+
+                    if (unitDtos != null && unitDtos.Any())
+                    {
+                        for (int i = 0; i < unitDtos.Count; i++)
+                        {
+                            var unitDto = unitDtos[i];
+
+                            // Map image index from form: "unitImageFiles[0]", "unitImageFiles[1]" etc.
+                            var imageKey = $"unitImageFiles[{i}]";
+
+                            if (request.UnitImageFiles != null)
+                            {
+                                if (unitDto.Id == 0)
+                                {
+                                    var unitEntity = _mapper.Map<Unit>(unitDto);
+
+                                    var image = request.UnitImageFiles[i];
+                                    if (image != null)
+                                    {
+                                        Guid? documentId = await _imageRepository.Upload(image);
+                                        unitEntity.DocumentId = documentId;
+                                    }
+
+                                    await _unitRepository.CreateUnitAsync(unitEntity);
+                                }
+                                else
+                                {
+                                    // Existing unit: replace image if provided
+                                    var existingUnit = await _dbContext.Units.FirstOrDefaultAsync(u => u.Id == unitDto.Id);
+                                    var unitEntity = _mapper.Map<Unit>(unitDto);
+                                    if(request.UnitImageFiles.Count > i)
+                                    {
+                                        if (existingUnit != null && existingUnit.DocumentId.HasValue)
+                                        {
+                                            var image = request.UnitImageFiles[i];
+                                            var updatedDocId = await _imageRepository.Edit(existingUnit.DocumentId, image);
+                                            unitEntity.DocumentId = updatedDocId;
+                                        }
+                                        else
+                                        {
+                                            var image = request.UnitImageFiles[i];
+                                            var newDocId = await _imageRepository.Upload(image);
+                                            unitEntity.DocumentId = newDocId;
+                                        }
+                                    }
+                                    await _unitRepository.UpdateAsync(unitEntity);
+                                }
+                            }
+
+                        }
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Console.WriteLine($"Error parsing units JSON: {ex.Message}");
+                }
+            }
+
             await _dbContext.SaveChangesAsync();
 
             return property;
         }
-
-
 
 
     }

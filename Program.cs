@@ -5,6 +5,7 @@ using KejaHUnt_PropertiesAPI.Utility;
 using Microsoft.EntityFrameworkCore;
 using Serilog.Events;
 using Serilog;
+using Microsoft.AspNetCore.ResponseCompression;
 using StackExchange.Redis;  // Redis
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,18 @@ builder.Host.UseSerilog();
 
 
 // Add services to the container.
+// Add response compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<GzipCompressionProvider>();
+});
+
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = System.IO.Compression.CompressionLevel.Fastest;
+});
+
 builder.Services.AddDbContext<ApplicationDbContext>(options
     => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -41,6 +54,17 @@ builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins("https://keja.kejahunt.co.ke")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -49,6 +73,9 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 // Added for debuging ***********************************************************************
+
+app.UseResponseCompression();
+
 app.UseDeveloperExceptionPage();
 
 // Configure the HTTP request pipeline.
@@ -60,12 +87,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors(options =>
-{
-    options.AllowAnyOrigin();
-    options.AllowAnyMethod();
-    options.AllowAnyHeader();
-});
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
