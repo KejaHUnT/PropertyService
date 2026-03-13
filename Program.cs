@@ -16,7 +16,6 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 builder.Host.UseSerilog();
 
-
 // Add services to the container.
 // Add response compression
 builder.Services.AddResponseCompression(options =>
