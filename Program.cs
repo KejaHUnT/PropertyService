@@ -12,8 +12,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 var logPath = builder.Configuration.GetValue<string>("LogPath");
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.File(...)
-    .CreateLogger();
+    .WriteTo.File(
+        path: logPath ?? "/app/logs/property.log",
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7,
+        restrictedToMinimumLevel: LogEventLevel.Information
+    ).CreateLogger();
 builder.Host.UseSerilog();
 
 // Add services to the container.
