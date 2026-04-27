@@ -3,6 +3,7 @@ using System;
 using KejaHUnt_PropertiesAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KejaHUnt_PropertiesAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260416081015_UnitPayments")]
+    partial class UnitPayments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,40 +119,6 @@ namespace KejaHUnt_PropertiesAPI.Migrations
                     b.HasIndex("PendingPropertyId");
 
                     b.ToTable("OutDoorFeatures");
-                });
-
-            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.PaymentTransaction", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("ExternalPaymentId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Reference")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("UnitPaymentId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UnitPaymentId");
-
-                    b.ToTable("PaymentTransactions");
                 });
 
             modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.PendingPolicyDescription", b =>
@@ -364,14 +333,9 @@ namespace KejaHUnt_PropertiesAPI.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("ExpectedAmount")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("PaidAmount")
-                        .HasColumnType("numeric");
+                    b.Property<long[]>("PaymentId")
+                        .IsRequired()
+                        .HasColumnType("bigint[]");
 
                     b.Property<int>("PeriodMonth")
                         .HasColumnType("integer");
@@ -381,10 +345,6 @@ namespace KejaHUnt_PropertiesAPI.Migrations
 
                     b.Property<long>("PropertyId")
                         .HasColumnType("bigint");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<long>("TenantId")
                         .HasColumnType("bigint");
@@ -465,17 +425,6 @@ namespace KejaHUnt_PropertiesAPI.Migrations
                     b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.PendingProperty", null)
                         .WithMany("OutdoorFeatures")
                         .HasForeignKey("PendingPropertyId");
-                });
-
-            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.PaymentTransaction", b =>
-                {
-                    b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.UnitPayments", "UnitPayment")
-                        .WithMany("Transactions")
-                        .HasForeignKey("UnitPaymentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("UnitPayment");
                 });
 
             modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.PendingPolicyDescription", b =>
@@ -595,11 +544,6 @@ namespace KejaHUnt_PropertiesAPI.Migrations
             modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.Unit", b =>
                 {
                     b.Navigation("Payments");
-                });
-
-            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.UnitPayments", b =>
-                {
-                    b.Navigation("Transactions");
                 });
 #pragma warning restore 612, 618
         }

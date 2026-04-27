@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Serilog.Events;
 using Serilog;
 using Microsoft.AspNetCore.ResponseCompression;
-using StackExchange.Redis;  // Redis
+using StackExchange.Redis;
+using KejaHUnt_PropertiesAPI.Services.Payments;  // Redis
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,9 @@ builder.Services.AddScoped<IPendingPropertyRepository, PendingPropertyRepository
 builder.Services.AddScoped<IPendingPropertyService, PendingPropertyService>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IFeatureRepository, FeatureRepository>();
+builder.Services.AddScoped<IUnitPaymentsRepository, UnitPaymentsRepository>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
 builder.Services.AddHttpClient(); 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(typeof(MappingProfile));

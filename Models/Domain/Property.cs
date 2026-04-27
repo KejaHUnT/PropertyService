@@ -14,5 +14,6 @@
         public ICollection<IndoorFeatures?> IndoorFeatures { get; set; } = new List<IndoorFeatures>();
         public ICollection<OutDoorFeatures?> OutdoorFeatures { get; set; } = new List<OutDoorFeatures>();
         public ICollection<PolicyDescription?> PolicyDescriptions { get; set; } = new List<PolicyDescription>();
+        public ICollection<UnitPayments?> UnitPayments { get; set; } = new List<UnitPayments>();
     }
 }

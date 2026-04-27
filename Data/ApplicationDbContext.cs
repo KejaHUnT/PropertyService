@@ -1,5 +1,7 @@
 ﻿using KejaHUnt_PropertiesAPI.Models.Domain;
+using KejaHUnt_PropertiesAPI.Models.enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace KejaHUnt_PropertiesAPI.Data
 {
@@ -18,5 +20,25 @@ namespace KejaHUnt_PropertiesAPI.Data
         public DbSet<Policy> Policies { get; set; }
         public DbSet<PolicyDescription> PolicyDescriptions { get; set; }
         public DbSet<PendingPolicyDescription> PendingPolicyDescriptions { get; set; }
+        public DbSet<UnitPayments> UnitPayments { get; set; }
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UnitPayments>()
+                .HasMany(x => x.Transactions)
+                .WithOne(t => t.UnitPayment)
+                .HasForeignKey(t => t.UnitPaymentId);
+
+            // UnitPayments Status
+            modelBuilder.Entity<UnitPayments>()
+                .Property(u => u.Status)
+                .HasConversion(new EnumToStringConverter<UnitPaymentStatus>());
+
+            // PaymentTransaction Status
+            modelBuilder.Entity<PaymentTransaction>()
+                .Property(p => p.Status)
+                .HasConversion(new EnumToStringConverter<PaymentTransactionStatus>());
+        }
     }
 }

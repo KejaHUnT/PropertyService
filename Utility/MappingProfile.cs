@@ -63,7 +63,11 @@ namespace KejaHUnt_PropertiesAPI.Utility
                 .ForMember(dest => dest.GeneralFeatures, opt => opt.Ignore()) // Manual mapping later
                 .ForMember(dest => dest.OutdoorFeatures, opt => opt.Ignore()) // Manual mapping later
                 .ForMember(dest => dest.IndoorFeatures, opt => opt.Ignore()); // Manual mapping later
+            CreateMap<PaymentTransaction, PaymentTransactionDto>();
 
+            CreateMap<UnitPayments, UnitPaymentsDto>()
+                .ForMember(dest => dest.Transactions,
+                           opt => opt.MapFrom(src => src.Transactions));
         }
     }
 }

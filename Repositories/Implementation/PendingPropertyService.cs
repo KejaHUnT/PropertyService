@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Net.Http;
+using AutoMapper;
 using KejaHUnt_PropertiesAPI.Models.Domain;
 using KejaHUnt_PropertiesAPI.Models.Dto;
 using KejaHUnt_PropertiesAPI.Repositories.Interface;
@@ -10,14 +11,18 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
         private readonly IPendingPropertyRepository _pendingRepo;
         private readonly IPropertyRepository _propertyRepo;
         private readonly IMapper _mapper;
+        private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClientFactory;
         private readonly IFeatureRepository _featureRepository;
 
-        public PendingPropertyService(IPendingPropertyRepository pendingRepo, IPropertyRepository propertyRepo, IMapper mapper, IFeatureRepository featureRepository)
+        public PendingPropertyService(IPendingPropertyRepository pendingRepo, IPropertyRepository propertyRepo, IMapper mapper, HttpClient httpClientFactory,  IFeatureRepository featureRepository, IConfiguration configuration)
         {
             _pendingRepo = pendingRepo;
             _propertyRepo = propertyRepo;
             _mapper = mapper;
+            _httpClientFactory = httpClientFactory;
             _featureRepository = featureRepository;
+            _configuration = configuration;
         }
 
         public async Task<PendingPropertyDto> SubmitAsync(PendingPropertyRequestDto dto, string userId, Guid documentId)
@@ -44,6 +49,8 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             var approvedProperty = _mapper.Map<Property>(pending);
             await _propertyRepo.AddAsync(approvedProperty);
 
+            await AssignRoleAsync(pending.Email, "Manager");
+
             // Map and save policy descriptions with the generated PropertyId
             foreach (var pendingPolicy in pendingPolicyDescriptions)
             {
@@ -57,6 +64,33 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                 await _featureRepository.AddPolicyDescriptionAsync(approvedPolicy);
             }
             await _pendingRepo.DeleteAsync(pending);
+        }
+
+        private async Task AssignRoleAsync(string email, string role)
+        {
+            var accessBaseUrl = _configuration["AccessService:BaseUrl"];
+            var endpoint = $"{accessBaseUrl}/api/Auth/assign-role";
+
+            var request = new AddUserToRoleRequestDto
+            {
+                Email = email,
+                RoleName = role
+            };
+
+            try
+            {
+                var response = await _httpClientFactory.PostAsJsonAsync(endpoint, request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    throw new ApplicationException($"Failed to assign role: {error}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Error occurred while assigning role: {ex.Message}", ex);
+            }
         }
     }
 }
