@@ -10,6 +10,7 @@
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = "Payment";
         public string CallbackUrl { get; set; } = string.Empty;
+        public string? WebhookUrl { get; set; }
         public string GatewaySecretKey { get; set; } = string.Empty;
     }
 }
