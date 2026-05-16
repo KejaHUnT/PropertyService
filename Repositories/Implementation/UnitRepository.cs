@@ -37,7 +37,6 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
 
         public async Task<IEnumerable<Unit>> GetAllAsync()
         {
-            //fetch only open units.......where status is not booked or reserved
             return await _dbContext.Units.ToListAsync();
         }
 
@@ -54,7 +53,7 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             {
                 return null;
             }
-            // Update basic fields
+
             existingUnit.Price = unit.Price;
             existingUnit.Type = unit.Type;
             existingUnit.Bathrooms = unit.Bathrooms;
@@ -63,17 +62,16 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             existingUnit.DoorNumber = unit.DoorNumber;
             existingUnit.Status = unit.Status;
             existingUnit.PropertyId = unit.PropertyId;
+
             if (unit.DocumentId != null && unit.DocumentId != Guid.Empty)
             {
                 existingUnit.DocumentId = unit.DocumentId;
             }
             else
             {
-                // If the document ID is not provided, keep the existing one
                 existingUnit.DocumentId = existingUnit.DocumentId;
             }
 
-            // Save changes
             await _dbContext.SaveChangesAsync();
 
             return existingUnit;
@@ -98,7 +96,13 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             var currentStatus = existingUnit.Status;
             var newStatus = request.Status;
 
-            // Valid transitions:
+            // Idempotent — already in the target status
+            if (currentStatus == newStatus)
+            {
+                return existingUnit;
+            }
+
+            // Valid transitions
             if (currentStatus == "Available" &&
                 (newStatus == "Reserved" || newStatus == "Booked" || newStatus == "Paying"))
             {
@@ -124,6 +128,5 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
 
             return existingUnit;
         }
-
     }
 }
