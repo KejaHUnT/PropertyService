@@ -67,7 +67,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 Amount = dto.Amount,
                 Currency = dto.Currency,
                 Description = $"Rent {dto.PeriodMonth}/{dto.PeriodYear}",
-                CallbackUrl = $"{_config["PaymentService:CallbackUrl"]}?tenantId={dto.TenantId}",
+                CallbackUrl = $"{_config["PaymentService:CallbackUrl"]}/{dto.TenantId}",
                 WebhookUrl = _config["PaymentService:WebhookUrl"],
                 GatewaySecretKey = _config["PaymentService:GatewaySecretKey"]
             };
