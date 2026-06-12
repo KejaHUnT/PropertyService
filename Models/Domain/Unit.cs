@@ -14,6 +14,7 @@ namespace KejaHUnt_PropertiesAPI.Models.Domain
         public string DoorNumber { get; set; }
         public string Status { get; set; }
         public Guid? DocumentId { get; set; }
+        public string? ImageUrl { get; set; }
         public long PropertyId { get; set; }
         public Property Property { get; set; }
         public ICollection<UnitPayments> Payments { get; set; } = new List<UnitPayments>();
