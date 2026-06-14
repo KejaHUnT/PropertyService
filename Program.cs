@@ -8,6 +8,7 @@ using Serilog;
 using Microsoft.AspNetCore.ResponseCompression;
 using StackExchange.Redis;
 using KejaHUnt_PropertiesAPI.Services.Payments;  // Redis
+using Minio; // Minio
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,19 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
     return ConnectionMultiplexer.Connect(connectionString);
 });
 builder.Services.AddScoped<ICacheService, CacheService>();
+
+// MinIO
+builder.Services.AddSingleton<IMinioClient>(sp =>
+{
+    return new MinioClient()
+        .WithEndpoint(builder.Configuration["ObjectStorage:Endpoint"] ?? "minio:9000")
+        .WithCredentials(
+            builder.Configuration["ObjectStorage:AccessKey"] ?? "minioadmin",
+            builder.Configuration["ObjectStorage:SecretKey"] ?? "minioadmin123")
+        .WithSSL(builder.Configuration.GetValue<bool>("ObjectStorage:UseSSL"))
+        .Build();
+});
+
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IPropertyRepository, PropertyRepository>();
 builder.Services.AddScoped<IPendingPropertyRepository, PendingPropertyRepository>();

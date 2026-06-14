@@ -22,8 +22,8 @@ namespace KejaHUnt_PropertiesAPI.Controllers
         public async Task<IActionResult> Submit([FromForm] PendingPropertyRequestDto dto)
         {
             var userId = dto.Email; // Replace with your method of getting UserId from token
-            var documentId = await _fileService.Upload(dto.ImageFile);
-            var property = await _pendingService.SubmitAsync(dto, userId, documentId);
+            var imageUrl = await _fileService.Upload(dto.ImageFile, "properties");
+            var property = await _pendingService.SubmitAsync(dto, userId, imageUrl);
             return Ok(property);
         }
 

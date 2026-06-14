@@ -9,7 +9,7 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
         public string Location { get; set; }
         public string Type { get; set; }
         public string Description { get; set; }
-        public Guid? DocumentId { get; set; }
+        public string? ImageUrl { get; set; }
         public List<UnitDto> Units { get; set; } = new List<UnitDto>();
         public List<FeaturesDto> GeneralFeatures { get; set; } = new List<FeaturesDto>();
         public List<FeaturesDto> IndoorFeatures { get; set; } = new List<FeaturesDto>();

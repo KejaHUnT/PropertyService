@@ -39,11 +39,11 @@ namespace KejaHUnt_PropertiesAPI.Controllers
                 return BadRequest(ModelState);
 
             // Upload image and get DocumentId
-            Guid documentId = await _imageRepository.Upload(request.ImageFile);
+            var imageUrl = await _imageRepository.Upload(request.ImageFile, "properties");
 
             // Map base property (excluding GeneralFeatures)
             var property = _mapper.Map<Property>(request);
-            property.DocumentId = documentId;
+            property.ImageUrl = imageUrl;
             property.Units = new List<Unit>();
 
             // Use feature IDs from request to load full GeneralFeatures in the repo

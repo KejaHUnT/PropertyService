@@ -115,11 +115,7 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             // Handle image upload/update
             if (request.ImageFile != null)
             {
-                var newDocumentId = (request.DocumentId != null && request.DocumentId != Guid.Empty)
-                    ? await _imageRepository.Edit(request.DocumentId.Value, request.ImageFile)
-                    : await _imageRepository.Upload(request.ImageFile);
-
-                property.DocumentId = newDocumentId;
+                property.ImageUrl = await _imageRepository.Edit(property.ImageUrl, request.ImageFile, "properties");
             }
 
             // Clear and reassign feature collections
@@ -202,8 +198,7 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                                     var image = request.UnitImageFiles[i];
                                     if (image != null)
                                     {
-                                        Guid? documentId = await _imageRepository.Upload(image);
-                                        unitEntity.DocumentId = documentId;
+                                        unitEntity.ImageUrl = await _imageRepository.Upload(image, "units");
                                     }
 
                                     await _unitRepository.CreateUnitAsync(unitEntity);
@@ -215,17 +210,14 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                                     var unitEntity = _mapper.Map<Unit>(unitDto);
                                     if(request.UnitImageFiles.Count > i)
                                     {
-                                        if (existingUnit != null && existingUnit.DocumentId.HasValue)
+                                        var image = request.UnitImageFiles[i];
+                                        if (existingUnit != null && !string.IsNullOrEmpty(existingUnit.ImageUrl))
                                         {
-                                            var image = request.UnitImageFiles[i];
-                                            var updatedDocId = await _imageRepository.Edit(existingUnit.DocumentId, image);
-                                            unitEntity.DocumentId = updatedDocId;
+                                            unitEntity.ImageUrl = await _imageRepository.Edit(existingUnit.ImageUrl, image, "units");
                                         }
                                         else
                                         {
-                                            var image = request.UnitImageFiles[i];
-                                            var newDocId = await _imageRepository.Upload(image);
-                                            unitEntity.DocumentId = newDocId;
+                                            unitEntity.ImageUrl = await _imageRepository.Upload(image, "units");
                                         }
                                     }
                                     await _unitRepository.UpdateAsync(unitEntity);

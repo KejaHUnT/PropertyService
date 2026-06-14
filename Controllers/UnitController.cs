@@ -58,8 +58,7 @@ namespace KejaHUnt_PropertiesAPI.Controllers
                 var image = request.ImageFiles[i];
                 if (image != null)
                 {
-                    Guid? documentId = await _imageRepository.Upload(image);
-                    unitEntity.DocumentId = documentId;
+                    unitEntity.ImageUrl = await _imageRepository.Upload(image, "units");
                 }
 
                 await _unitRepository.CreateUnitAsync(unitEntity);
@@ -136,14 +135,10 @@ namespace KejaHUnt_PropertiesAPI.Controllers
                 unitDto.Id = id;
 
                 // Handle image update if a file is included
-                Guid? documentIdToUse = unitDto.DocumentId;
                 if (request.ImageFile != null)
                 {
-                    documentIdToUse = (documentIdToUse != null && documentIdToUse != Guid.Empty)
-                        ? await _imageRepository.Edit(documentIdToUse.Value, request.ImageFile)
-                        : await _imageRepository.Upload(request.ImageFile);
+                    unitDto.ImageUrl = await _imageRepository.Edit(unitDto.ImageUrl, request.ImageFile, "units");
                 }
-                unitDto.DocumentId = documentIdToUse;
 
                 // Save to DB
                 await _unitRepository.UpdateAsync(unitDto);

@@ -14,7 +14,6 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
         public string DoorNumber { get; set; }
         public string Status { get; set; }
         public long PropertyId { get; set; }
-        public Guid? DocumentId { get; set; }
-
+        public string? ImageUrl { get; set; }
     }
 }

@@ -25,11 +25,11 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             _configuration = configuration;
         }
 
-        public async Task<PendingPropertyDto> SubmitAsync(PendingPropertyRequestDto dto, string userId, Guid documentId)
+        public async Task<PendingPropertyDto> SubmitAsync(PendingPropertyRequestDto dto, string userId, string imageUrl)
         {
             var pendingEntity = _mapper.Map<PendingProperty>(dto);
             pendingEntity.SubmittedByUserId = userId;
-            pendingEntity.DocumentId = documentId;
+            pendingEntity.ImageUrl = imageUrl;
             var property = await _pendingRepo.AddAsync(pendingEntity, dto.OutdoorFeatures, dto.IndoorFeatures, dto.GeneralFeatures);
             return property;
         }
