@@ -8,7 +8,6 @@
         public string Type { get; set; }
         public string Description { get; set; }
         public string Email { get; set; }
-        public Guid? DocumentId { get; set; }
         public string? ImageUrl { get; set; }
         public ICollection<Unit?> Units { get; set; } = new List<Unit>();
         public ICollection<GeneralFeatures?> GeneralFeatures { get; set; } = new List<GeneralFeatures>();

@@ -63,13 +63,9 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             existingUnit.Status = unit.Status;
             existingUnit.PropertyId = unit.PropertyId;
 
-            if (unit.DocumentId != null && unit.DocumentId != Guid.Empty)
+            if (!string.IsNullOrEmpty(unit.ImageUrl))
             {
-                existingUnit.DocumentId = unit.DocumentId;
-            }
-            else
-            {
-                existingUnit.DocumentId = existingUnit.DocumentId;
+                existingUnit.ImageUrl = unit.ImageUrl;
             }
 
             await _dbContext.SaveChangesAsync();
