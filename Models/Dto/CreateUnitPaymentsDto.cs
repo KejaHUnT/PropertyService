@@ -17,5 +17,7 @@
 
         public string Gateway { get; set; } = "paystack";
         public string AccountId { get; set; } = string.Empty;
+        
+        public string? CallbackUrl { get; set; }
     }
 }

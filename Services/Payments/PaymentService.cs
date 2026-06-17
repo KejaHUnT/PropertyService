@@ -67,7 +67,9 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 Amount = dto.Amount,
                 Currency = dto.Currency,
                 Description = $"Rent {dto.PeriodMonth}/{dto.PeriodYear}",
-                CallbackUrl = $"{_config["PaymentService:CallbackUrl"]}/{dto.TenantId}",
+                CallbackUrl = !string.IsNullOrEmpty(dto.CallbackUrl)
+                    ? dto.CallbackUrl
+                    : $"{_config["PaymentService:CallbackUrl"]}/{dto.TenantId}",
                 WebhookUrl = _config["PaymentService:WebhookUrl"],
                 GatewaySecretKey = _config["PaymentService:GatewaySecretKey"]
             };
@@ -193,6 +195,15 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 unitPayment.ExpectedAmount);
 
             await _unitPaymentsRepo.UpdateAsync(unitPayment);
+
+            if (unitPayment.Status == UnitPaymentStatus.Paid)
+            {
+                await _unitRepository.UpdateUnitStatusAsync(new UnitStatusDto
+                {
+                    UnitId = unitPayment.UnitId,
+                    Status = "Booked"
+                });
+            }
         }
 
         // HELPER: Map gateway status to internal status
