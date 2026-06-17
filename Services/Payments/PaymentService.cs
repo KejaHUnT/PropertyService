@@ -61,7 +61,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             var request = new InitializePaymentRequest
             {
                 Gateway = dto.Gateway ?? _config["PaymentService:Gateway"],
-                AccountId = dto.AccountId ?? _config["PaymentService:AccountId"],
+                AccountId = dto.AccountId ?? $"{_config["PaymentService:ClientId"]}-{dto.PropertyId}",
                 PhoneNumber = dto.PhoneNumber,
                 Email = dto.UserEmail,
                 Amount = dto.Amount,
@@ -75,9 +75,13 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             var json = JsonSerializer.Serialize(request,
                 new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
-            var response = await _httpClient.PostAsync(
-                _config["PaymentService:BaseUrl"] + _config["PaymentService:InitializeEndpoint"],
-                new StringContent(json, Encoding.UTF8, "application/json"));
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post,
+                _config["PaymentService:BaseUrl"] + _config["PaymentService:InitializeEndpoint"]);
+            httpRequest.Headers.Add("X-Api-Key", _config["PaymentService:ApiKey"]);
+            httpRequest.Headers.Add("X-Client-Id", _config["PaymentService:ClientId"]);
+            httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(httpRequest);
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception(await response.Content.ReadAsStringAsync());
