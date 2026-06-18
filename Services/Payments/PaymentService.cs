@@ -198,11 +198,25 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
 
             if (unitPayment.Status == UnitPaymentStatus.Paid)
             {
-                await _unitRepository.UpdateUnitStatusAsync(new UnitStatusDto
+                var unit = await _unitRepository.GetUnitByIdAsync(unitPayment.UnitId);
+
+                if (unit != null && (unit.Status == "Reserved" || unit.Status == "Available"))
                 {
-                    UnitId = unitPayment.UnitId,
-                    Status = "Booked"
-                });
+                    _logger.LogInformation("Unit {UnitId} is {Status}, closing booking", unitPayment.UnitId, unit.Status);
+
+                    var bookingServiceUrl = _config["BookingService:BaseUrl"];
+                    var request = new HttpRequestMessage(
+                        HttpMethod.Patch,
+                        $"{bookingServiceUrl}/api/booking/unit/{unitPayment.UnitId}/close"
+                    );
+
+                    var response = await _httpClient.SendAsync(request);
+                    _logger.LogInformation("Booking close response: {StatusCode}", response.StatusCode);
+                }
+                else
+                {
+                    _logger.LogInformation("Unit {UnitId} is already Booked, skipping", unitPayment.UnitId);
+                }
             }
         }
 
