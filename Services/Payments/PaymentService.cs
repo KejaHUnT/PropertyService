@@ -5,6 +5,7 @@ using KejaHUnt_PropertiesAPI.Models.enums;
 using KejaHUnt_PropertiesAPI.Repositories.Interface;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace KejaHUnt_PropertiesAPI.Services.Payments
 {
@@ -16,6 +17,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
         private readonly IUnitRepository _unitRepository;
         private readonly IPaymentTransactionRepository _transactionRepo;
         private readonly IMapper _mapper;
+        private readonly ILogger<PaymentService> _logger;
 
         public PaymentService(
             HttpClient httpClient,
@@ -23,7 +25,9 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             IUnitPaymentsRepository unitPaymentsRepo,
             IUnitRepository unitRepository,
             IPaymentTransactionRepository transactionRepo,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<PaymentService> logger)
+            
         {
             _httpClient = httpClient;
             _config = config;
@@ -31,6 +35,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             _unitRepository = unitRepository;
             _transactionRepo = transactionRepo;
             _mapper = mapper;
+            _logger = logger;
         }
 
         //  INITIALIZE PAYMENT
