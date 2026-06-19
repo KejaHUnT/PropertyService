@@ -58,6 +58,15 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             try
             {
                 var properties = await _propertyRepository.GetAllAsync();
+
+                // 🆕 Hide occupied units from public listing
+                foreach (var property in properties)
+                {
+                    property.Units = property.Units
+                        .Where(u => u.Status != "Occupied")
+                        .ToList();
+                }
+
                 return Ok(_mapper.Map<List<PropertyDto>>(properties));
             }
             catch (Exception ex)
@@ -78,6 +87,11 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             {
                 return NotFound();
             }
+
+            // 🆕 Hide occupied units from public view
+            property.Units = property.Units
+                .Where(u => u.Status != "Occupied")
+                .ToList();
 
             return Ok(_mapper.Map<PropertyDto>(property));
         }

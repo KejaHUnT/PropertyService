@@ -98,31 +98,25 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                 return existingUnit;
             }
 
-            // Valid transitions
-            if (currentStatus == "Available" &&
-                (newStatus == "Reserved" || newStatus == "Booked" || newStatus == "Paying"))
+            // Allowed transitions
+            bool allowed = (currentStatus, newStatus) switch
             {
-                existingUnit.Status = newStatus;
-            }
-            else if (currentStatus == "Reserved" &&
-                     (newStatus == "Booked" || newStatus == "Paying"))
-            {
-                existingUnit.Status = newStatus;
-            }
-            else if (currentStatus == "Paying" &&
-                     (newStatus == "Booked" || newStatus == "Reserved" || newStatus == "Available" || newStatus == "Paying"))
-            {
-                existingUnit.Status = newStatus;
-            }
-            else
+                ("Available", "Reserved") => true,
+                ("Available", "Occupied") => true,   // future: payment flow
+                ("Reserved", "Occupied") => true,    // manager approves existing tenant
+                ("Reserved", "Available") => true,   // manager rejects
+                ("Occupied", "Available") => true,   // manager releases unit
+                _ => false
+            };
+
+            if (!allowed)
             {
                 throw new InvalidOperationException(
                     $"Cannot change unit status from '{currentStatus}' to '{newStatus}'.");
             }
 
+            existingUnit.Status = newStatus;
             await _dbContext.SaveChangesAsync();
 
             return existingUnit;
         }
-    }
-}
