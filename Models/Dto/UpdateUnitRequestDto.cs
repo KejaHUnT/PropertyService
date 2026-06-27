@@ -16,5 +16,6 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
         public Guid? DocumentId { get; set; }
         public long PropertyId { get; set; }
         public IFormFile ImageFile { get; set; }     // New uploaded file for unit
+        public bool ShowPrice { get; set; }
     }
 }

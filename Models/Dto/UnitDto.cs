@@ -15,5 +15,6 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
         public string Status { get; set; }
         public long PropertyId { get; set; }
         public string? ImageUrl { get; set; }
+        public bool ShowPrice { get; set; }
     }
 }

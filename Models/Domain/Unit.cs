@@ -17,6 +17,7 @@ namespace KejaHUnt_PropertiesAPI.Models.Domain
         public long PropertyId { get; set; }
         public Property Property { get; set; }
         public ICollection<UnitPayments> Payments { get; set; } = new List<UnitPayments>();
+        public bool ShowPrice { get; set; } = true;
 
     }
 }
