@@ -10,6 +10,5 @@
         public string Doornumber { get; set; }
         public string Status { get; set; }
         public long PropertyId { get; set; }
-        public bool ShowPrice { get; set; } = true;
     }
 }

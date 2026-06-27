@@ -62,7 +62,6 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             existingUnit.DoorNumber = unit.DoorNumber;
             existingUnit.Status = unit.Status;
             existingUnit.PropertyId = unit.PropertyId;
-            existingUnit.ShowPrice = unit.ShowPrice;
 
             if (!string.IsNullOrEmpty(unit.ImageUrl))
             {
