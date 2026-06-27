@@ -38,7 +38,7 @@ namespace KejaHUnt_PropertiesAPI.Controllers
 
             var sb = new StringBuilder();
             sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-            sb.AppendLine("<urlset xmlns=\"http://www.sitemaps.org/schemas/0.9\">");
+            sb.AppendLine("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">");
             foreach (var url in urls)
             {
                 sb.AppendLine($"  <url><loc>{url}</loc></url>");
