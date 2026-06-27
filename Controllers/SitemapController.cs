@@ -15,6 +15,7 @@ namespace KejaHUnt_PropertiesAPI.Controllers
         }
 
         [HttpGet("/sitemap.xml")]
+        [HttpGet("/properties/sitemap.xml")]
         public async Task<IActionResult> Sitemap()
         {
             var baseUrl = "https://kejahunt.co.ke";
@@ -48,6 +49,7 @@ namespace KejaHUnt_PropertiesAPI.Controllers
         }
 
         [HttpGet("/robots.txt")]
+        [HttpGet("/properties/robots.txt")]
         public IActionResult Robots()
         {
             var content = @"User-agent: *
