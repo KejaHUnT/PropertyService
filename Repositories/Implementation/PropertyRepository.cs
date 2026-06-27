@@ -238,6 +238,18 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             return property;
         }
 
+        public async Task<Property?> UpdateShowPriceAsync(long id, bool showPrice)
+        {
+            var property = await _dbContext.Properties.FirstOrDefaultAsync(p => p.Id == id);
+
+            if (property == null)
+                return null;
+
+            property.ShowPrice = showPrice;
+            await _dbContext.SaveChangesAsync();
+
+            return property;
+        }
 
     }
 }

@@ -14,6 +14,7 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Interface
 
         Task<Property?> UpdateAsync(long id,UpdatePropertyRequestDto request);
 
+        Task<Property?> UpdateShowPriceAsync(long id, bool showPrice);
 
         Task<Property?> DeleteAync(long id);
     }

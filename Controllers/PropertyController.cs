@@ -120,7 +120,17 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             return Ok(_mapper.Map<PropertyDto>(updatedProperty));
         }
 
+        // PATCH: api/property/{id}/showprice
+        [HttpPatch]
+        [Route("{id:long}/showprice")]
+        public async Task<IActionResult> UpdateShowPrice([FromRoute] long id, [FromBody] bool showPrice)
+        {
+            var updated = await _propertyRepository.UpdateShowPriceAsync(id, showPrice);
+            if (updated == null)
+                return NotFound();
 
+            return Ok(_mapper.Map<PropertyDto>(updated));
+        }  
 
         [HttpDelete]
         [Route("{id:long}")]
