@@ -121,7 +121,7 @@ namespace KejaHUnt_PropertiesAPI.Controllers
         }
 
         // PATCH: api/property/{id}/showprice
-        [HttpPatch]
+        [HttpPut]
         [Route("{id:long}/showprice")]
         public async Task<IActionResult> UpdateShowPrice([FromRoute] long id, [FromBody] bool showPrice)
         {
