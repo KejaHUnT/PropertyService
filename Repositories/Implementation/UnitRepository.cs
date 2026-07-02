@@ -1,6 +1,7 @@
 ﻿using KejaHUnt_PropertiesAPI.Data;
 using KejaHUnt_PropertiesAPI.Models.Domain;
 using KejaHUnt_PropertiesAPI.Models.Dto;
+using KejaHUnt_PropertiesAPI.Models.Enums;
 using KejaHUnt_PropertiesAPI.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 
@@ -60,7 +61,7 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             existingUnit.Size = unit.Size;
             existingUnit.Floor = unit.Floor;
             existingUnit.DoorNumber = unit.DoorNumber;
-            existingUnit.Status = unit.Status;
+            existingUnit.Status = unit.Status;   // enum
             existingUnit.PropertyId = unit.PropertyId;
 
             if (!string.IsNullOrEmpty(unit.ImageUrl))
@@ -89,8 +90,13 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                 throw new InvalidOperationException("Unit not found.");
             }
 
+            // Parse the incoming status string to enum
+            if (!Enum.TryParse<UnitStatus>(request.Status, true, out var newStatus))
+            {
+                throw new InvalidOperationException($"Invalid status value: '{request.Status}'");
+            }
+
             var currentStatus = existingUnit.Status;
-            var newStatus = request.Status;
 
             // Idempotent — already in the target status
             if (currentStatus == newStatus)
@@ -98,14 +104,14 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                 return existingUnit;
             }
 
-            // Allowed transitions
+            // Allowed transitions using enum values
             bool allowed = (currentStatus, newStatus) switch
             {
-                ("Available", "Reserved") => true,
-                ("Available", "Occupied") => true,   // future: payment flow
-                ("Reserved", "Occupied") => true,    // manager approves existing tenant
-                ("Reserved", "Available") => true,   // manager rejects
-                ("Occupied", "Available") => true,   // manager releases unit
+                (UnitStatus.Available, UnitStatus.Reserved) => true,
+                (UnitStatus.Available, UnitStatus.Occupied) => true,   // future: payment flow
+                (UnitStatus.Reserved, UnitStatus.Occupied) => true,    // manager approves existing tenant
+                (UnitStatus.Reserved, UnitStatus.Available) => true,   // manager rejects
+                (UnitStatus.Occupied, UnitStatus.Available) => true,   // manager releases unit
                 _ => false
             };
 

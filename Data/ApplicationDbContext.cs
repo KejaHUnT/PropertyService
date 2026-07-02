@@ -25,20 +25,26 @@ namespace KejaHUnt_PropertiesAPI.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Existing configurations
             modelBuilder.Entity<UnitPayments>()
                 .HasMany(x => x.Transactions)
                 .WithOne(t => t.UnitPayment)
                 .HasForeignKey(t => t.UnitPaymentId);
 
-            // UnitPayments Status
             modelBuilder.Entity<UnitPayments>()
                 .Property(u => u.Status)
                 .HasConversion(new EnumToStringConverter<UnitPaymentStatus>());
 
-            // PaymentTransaction Status
             modelBuilder.Entity<PaymentTransaction>()
                 .Property(p => p.Status)
                 .HasConversion(new EnumToStringConverter<PaymentTransactionStatus>());
+
+            // NEW: Convert Unit.Status enum to string
+            modelBuilder.Entity<Unit>(entity =>
+            {
+                entity.Property(e => e.Status)
+                    .HasConversion<string>();
+            });
         }
     }
 }

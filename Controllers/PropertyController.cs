@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using KejaHUnt_PropertiesAPI.Models.Enums;
 
 namespace KejaHUnt_PropertiesAPI.Controllers
 {
@@ -63,7 +64,7 @@ namespace KejaHUnt_PropertiesAPI.Controllers
                 foreach (var property in properties)
                 {
                     property.Units = property.Units
-                        .Where(u => u.Status != "Occupied")
+                        .Where(u => u.Status != UnitStatus.Occupied)   // <-- FIXED
                         .ToList();
                 }
 
@@ -90,7 +91,7 @@ namespace KejaHUnt_PropertiesAPI.Controllers
 
             // 🆕 Hide occupied units from public view
             property.Units = property.Units
-                .Where(u => u.Status != "Occupied")
+                .Where(u => u.Status != UnitStatus.Occupied)   // <-- FIXED
                 .ToList();
 
             return Ok(_mapper.Map<PropertyDto>(property));
@@ -146,8 +147,5 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             return Ok(_mapper.Map<PropertyDto>(deletedProperty));
 
         }
-
-
-
     }
 }

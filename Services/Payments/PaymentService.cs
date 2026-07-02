@@ -2,6 +2,7 @@
 using KejaHUnt_PropertiesAPI.Models.Domain;
 using KejaHUnt_PropertiesAPI.Models.Dto;
 using KejaHUnt_PropertiesAPI.Models.enums;
+using KejaHUnt_PropertiesAPI.Models.Enums;    // <-- added for UnitStatus
 using KejaHUnt_PropertiesAPI.Repositories.Interface;
 using System.Text;
 using System.Text.Json;
@@ -27,7 +28,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             IPaymentTransactionRepository transactionRepo,
             IMapper mapper,
             ILogger<PaymentService> logger)
-            
         {
             _httpClient = httpClient;
             _config = config;
@@ -169,24 +169,17 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             if (transaction == null)
                 throw new Exception("Transaction not found");
 
-            // ✅ Convert gateway status
             var gatewayStatus = (PaymentStatus)statusInt;
-
-            // ✅ Map to internal enum
             var newStatus = MapGatewayStatus(gatewayStatus);
-
-            // ✅ Update transaction safely
             transaction.Status = newStatus;
             await _transactionRepo.UpdateAsync(transaction);
 
-            // ❌ Only process successful payments
             if (newStatus != PaymentTransactionStatus.Success)
                 return;
 
             var unitPayment = await _unitPaymentsRepo.GetByIdAsync(transaction.UnitPaymentId);
             if (unitPayment == null) return;
 
-            // 🔥 Recalculate total from ALL successful transactions (NOT +=)
             var transactions = await _transactionRepo
                 .GetByUnitPaymentIdAsync(unitPayment.Id);
 
@@ -194,7 +187,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 .Where(t => t.Status == PaymentTransactionStatus.Success)
                 .Sum(t => t.Amount);
 
-            // ✅ Derive status (NEVER assign blindly)
             unitPayment.Status = CalculateUnitPaymentStatus(
                 unitPayment.PaidAmount,
                 unitPayment.ExpectedAmount);
@@ -205,7 +197,8 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             {
                 var unit = await _unitRepository.GetUnitByIdAsync(unitPayment.UnitId);
 
-                if (unit != null && (unit.Status == "Reserved" || unit.Status == "Available"))
+                // FIXED: compare enum values, not strings
+                if (unit != null && (unit.Status == UnitStatus.Reserved || unit.Status == UnitStatus.Available))
                 {
                     _logger.LogInformation("Unit {UnitId} is {Status}, closing booking", unitPayment.UnitId, unit.Status);
 
@@ -225,7 +218,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             }
         }
 
-        // HELPER: Map gateway status to internal status
         private PaymentTransactionStatus MapGatewayStatus(PaymentStatus status)
         {
             return status switch
@@ -237,7 +229,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             };
         }
 
-        // HELPER: Calculate UnitPaymentStatus based on amounts
         private UnitPaymentStatus CalculateUnitPaymentStatus(decimal paid, decimal expected)
         {
             if (paid == 0)
