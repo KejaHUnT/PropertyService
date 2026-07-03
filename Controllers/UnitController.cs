@@ -139,21 +139,6 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             return Ok(_mapper.Map<UnitDto>(updatedUnit));
         }
 
-        // NEW: PUT: api/unit/{unitId}/status (uses enum)
-        [HttpPut]
-        [Route("{unitId:long}/status")]
-        public async Task<IActionResult> UpdateUnitStatusDirect([FromRoute] long unitId, [FromBody] UnitStatus status)
-        {
-            var unit = await _unitRepository.GetUnitByIdAsync(unitId);
-            if (unit == null)
-                return NotFound($"Unit with ID {unitId} not found.");
-
-            unit.Status = status;
-            await _unitRepository.UpdateAsync(unit);   // Use existing UpdateAsync
-
-            return Ok(_mapper.Map<UnitDto>(unit));
-        }
-
         [HttpDelete]
         [Route("{id:long}")]
         public async Task<IActionResult> DeleteUnitById([FromRoute] long id)
