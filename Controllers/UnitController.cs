@@ -39,9 +39,9 @@ namespace KejaHUnt_PropertiesAPI.Controllers
                 return BadRequest("Invalid units JSON format.");
             }
 
-            if (request.ImageFiles == null || request.ImageFiles.Count != unitDtos.Count)
+            if (request.ImageFiles != null && request.ImageFiles.Count != unitDtos.Count)
             {
-                return BadRequest("Number of images must match number of units.");
+                return BadRequest("If images are provided, the count must match the number of units.");
             }
 
             var unitsToSave = new List<Unit>();
@@ -51,7 +51,7 @@ namespace KejaHUnt_PropertiesAPI.Controllers
                 var unitDto = unitDtos[i];
                 var unitEntity = _mapper.Map<Unit>(unitDto);
 
-                var image = request.ImageFiles[i];
+                var image = request.ImageFiles != null && request.ImageFiles.Count > i ? request.ImageFiles[i] : null;
                 if (image != null)
                 {
                     unitEntity.ImageUrl = await _imageRepository.Upload(image, "units");
