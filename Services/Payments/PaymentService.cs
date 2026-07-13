@@ -218,6 +218,82 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             }
         }
 
+        public async Task<UnitPaymentsDto> RecordManualPaymentAsync(CreateManualUnitPaymentDto dto)
+        {
+            if (dto.PaymentType == "mpesa" && string.IsNullOrWhiteSpace(dto.MpesaCode))
+                throw new ArgumentException("MpesaCode is required when PaymentType is 'mpesa'.");
+        
+            var unitPayment = await _unitPaymentsRepo
+                .GetByUnitAndPeriodAsync(dto.UnitId, dto.PeriodMonth, dto.PeriodYear);
+        
+            var unit = await _unitRepository.GetUnitByIdAsync(dto.UnitId);
+        
+            if (unitPayment == null)
+            {
+                unitPayment = new UnitPayments
+                {
+                    UnitId = dto.UnitId,
+                    PropertyId = dto.PropertyId,
+                    TenantId = dto.TenantId,
+                    PeriodMonth = dto.PeriodMonth,
+                    PeriodYear = dto.PeriodYear,
+                    ExpectedAmount = unit.Price,
+                    PaidAmount = 0,
+                    Status = UnitPaymentStatus.Pending
+                };
+                await _unitPaymentsRepo.CreateAsync(unitPayment);
+            }
+        
+            // Property generates the reference — avoids the webhook race condition
+            var reference = $"{_config["PaymentService:ClientId"]}_{Guid.NewGuid():N}";
+        
+            // Save local transaction FIRST, before calling payment API
+            var transaction = new PaymentTransaction
+            {
+                UnitPaymentId = unitPayment.Id,
+                Amount = dto.Amount,
+                Status = PaymentTransactionStatus.Initialized,
+                Reference = reference
+            };
+            await _transactionRepo.CreateAsync(transaction);
+        
+            // Now call payment API's manual-payments endpoint
+            var manualRequest = new
+            {
+                reference,
+                amount = dto.Amount,
+                phoneNumber = dto.PhoneNumber,
+                paymentType = dto.PaymentType,
+                mpesaCode = dto.MpesaCode,
+                description = $"Rent {dto.PeriodMonth}/{dto.PeriodYear}",
+                webhookUrl = _config["PaymentService:WebhookUrl"],
+                approvedByManagerId = dto.ApprovedByManagerId
+            };
+        
+            var json = JsonSerializer.Serialize(manualRequest,
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post,
+                _config["PaymentService:BaseUrl"] + "/api/manual-payments");
+            httpRequest.Headers.Add("X-Api-Key", _config["PaymentService:ApiKey"]);
+            httpRequest.Headers.Add("X-Client-Id", _config["PaymentService:ClientId"]);
+            httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        
+            var response = await _httpClient.SendAsync(httpRequest);
+        
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Manual payment API call failed for {Reference}: {Body}", reference, errorBody);
+                throw new Exception($"Payment API error: {errorBody}");
+            }
+        
+            // At this point the webhook has already fired synchronously and updated
+            // unitPayment via HandleWebhookAsync — refetch to return current state
+            var refreshed = await _unitPaymentsRepo.GetByIdAsync(unitPayment.Id);
+            return _mapper.Map<UnitPaymentsDto>(refreshed);
+        }
+
         private PaymentTransactionStatus MapGatewayStatus(PaymentStatus status)
         {
             return status switch

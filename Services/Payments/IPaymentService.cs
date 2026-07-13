@@ -20,6 +20,8 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
 
         Task<UnitPaymentsDto?> DeleteAsync(long id);
 
+        Task<UnitPaymentsDto> RecordManualPaymentAsync(CreateManualUnitPaymentDto dto);
+
         Task HandleWebhookAsync(string reference, int status);
     }
 }

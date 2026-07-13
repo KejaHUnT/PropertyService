@@ -60,6 +60,50 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             }
         }
 
+        // RECORD MANUAL PAYMENT (CASH OR MPESA)
+        [HttpPost("manual")]
+        public async Task<IActionResult> RecordManualPayment([FromBody] CreateManualUnitPaymentDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                    return BadRequest("Invalid request data");
+        
+                if (dto.Amount <= 0)
+                    return BadRequest("Amount must be greater than 0");
+        
+                if (dto.PaymentType == "mpesa" && string.IsNullOrWhiteSpace(dto.MpesaCode))
+                    return BadRequest("MpesaCode is required when PaymentType is 'mpesa'");
+        
+                if (string.IsNullOrWhiteSpace(dto.ApprovedByManagerId))
+                    return BadRequest("ApprovedByManagerId is required");
+        
+                var response = await _paymentService.RecordManualPaymentAsync(dto);
+        
+                return Ok(new
+                {
+                    success = true,
+                    message = "Manual payment recorded successfully",
+                    data = response
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recording manual payment");
+        
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error recording manual payment",
+                    error = ex.Message
+                });
+            }
+        }        
+
         // GET ALL
         [HttpGet]
         public async Task<IActionResult> GetAll()
