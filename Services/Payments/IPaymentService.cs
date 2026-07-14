@@ -21,7 +21,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
 
         Task<UnitPaymentsDto> RecordManualPaymentAsync(CreateManualUnitPaymentDto dto);
 
-        Task<InitializePaymentResponse> InitiateManualMpesaAsync(InitiateManualMpesaDto dto);
+        Task<InitiateManualMpesaResponse> InitiateManualMpesaAsync(InitiateManualMpesaDto dto);
 
         Task<UnitPaymentsDto?> SubmitTenantMpesaSmsAsync(long unitPaymentId, SubmitTenantSmsDto dto);
 

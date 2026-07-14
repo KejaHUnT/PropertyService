@@ -39,7 +39,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
         }
 
         //  INITIALIZE PAYMENT
-        public async Task<InitializePaymentResponse> InitiateManualMpesaAsync(InitiateManualMpesaDto dto)
+        public async Task<InitiateManualMpesaResponse> InitiateManualMpesaAsync(InitiateManualMpesaDto dto)
         {
             if (dto.Amount <= 0)
                 throw new ArgumentException("Amount must be greater than 0.");
@@ -107,7 +107,11 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             };
             await _transactionRepo.CreateAsync(transaction);
         
-            return paymentResponse;
+            return new InitiateManualMpesaResponse
+            {
+                UnitPaymentId = unitPayment.Id,
+                PaymentResponse = paymentResponse
+            };            
         }
 
         //  INITIALIZE PAYMENT (Paystack/KCB gateway flow)
