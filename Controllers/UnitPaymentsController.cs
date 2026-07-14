@@ -104,6 +104,153 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             }
         }        
 
+                // TENANT: "ALREADY PAID" — INITIATE MANUAL MPESA SUBMISSION
+                [HttpPost("manual/initiate")]
+                public async Task<IActionResult> InitiateManualMpesa([FromBody] InitiateManualMpesaDto dto)
+                {
+                    try
+                    {
+                        if (dto == null)
+                            return BadRequest("Invalid request data");
+                
+                        if (dto.Amount <= 0)
+                            return BadRequest("Amount must be greater than 0");
+                
+                        var response = await _paymentService.InitiateManualMpesaAsync(dto);
+                
+                        return Ok(new
+                        {
+                            success = true,
+                            message = "Manual payment initiated. Reference generated for SMS submission.",
+                            data = response
+                        });
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return BadRequest(new { success = false, message = ex.Message });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error initiating manual mpesa payment");
+                
+                        return StatusCode(500, new
+                        {
+                            success = false,
+                            message = "Error initiating manual mpesa payment",
+                            error = ex.Message
+                        });
+                    }
+                }
+        
+        // TENANT: SUBMIT RAW MPESA SMS
+        [HttpPost("{unitPaymentId:long}/tenant-sms")]
+        public async Task<IActionResult> SubmitTenantSms(long unitPaymentId, [FromBody] SubmitTenantSmsDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                    return BadRequest("Invalid request data");
+        
+                if (string.IsNullOrWhiteSpace(dto.RawSms))
+                    return BadRequest("RawSms is required");
+        
+                if (dto.Amount <= 0)
+                    return BadRequest("Amount must be greater than 0");
+        
+                var response = await _paymentService.SubmitTenantMpesaSmsAsync(unitPaymentId, dto);
+        
+                return Ok(new
+                {
+                    success = true,
+                    message = "SMS submitted. Awaiting manager review.",
+                    data = response
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error submitting tenant SMS");
+        
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error submitting tenant SMS",
+                    error = ex.Message
+                });
+            }
+        }
+        
+        // MANAGER: GET PENDING MANUAL PAYMENTS FOR A PROPERTY
+        [HttpGet("property/{propertyId:long}/pending-manual")]
+        public async Task<IActionResult> GetPendingManual(long propertyId)
+        {
+            try
+            {
+                var result = await _paymentService.GetPendingManualPaymentsAsync(propertyId);
+        
+                return Ok(new
+                {
+                    success = true,
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching pending manual payments");
+        
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error fetching pending manual payments",
+                    error = ex.Message
+                });
+            }
+        }
+        
+        // MANAGER: APPROVE MANUAL PAYMENT
+        [HttpPost("{unitPaymentId:long}/approve-manual")]
+        public async Task<IActionResult> ApproveManual(long unitPaymentId, [FromBody] ApproveUnitPaymentDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                    return BadRequest("Invalid request data");
+        
+                if (string.IsNullOrWhiteSpace(dto.MpesaCode))
+                    return BadRequest("MpesaCode is required");
+        
+                if (string.IsNullOrWhiteSpace(dto.ApprovedByManagerId))
+                    return BadRequest("ApprovedByManagerId is required");
+        
+                var response = await _paymentService.ApproveManualPaymentAsync(unitPaymentId, dto);
+        
+                return Ok(new
+                {
+                    success = true,
+                    message = "Manual payment approved successfully",
+                    data = response
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving manual payment");
+        
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error approving manual payment",
+                    error = ex.Message
+                });
+            }
+        }        
+
         // GET ALL
         [HttpGet]
         public async Task<IActionResult> GetAll()

@@ -5,7 +5,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
 {
     public interface IPaymentService
     {
-
         Task<InitializePaymentResponse> InitializePaymentAsync(CreateUnitPaymentsDto dto);
 
         Task<List<UnitPaymentsDto>> GetAllAsync();
@@ -21,6 +20,14 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
         Task<UnitPaymentsDto?> DeleteAsync(long id);
 
         Task<UnitPaymentsDto> RecordManualPaymentAsync(CreateManualUnitPaymentDto dto);
+
+        Task<InitializePaymentResponse> InitiateManualMpesaAsync(InitiateManualMpesaDto dto);
+
+        Task<UnitPaymentsDto?> SubmitTenantMpesaSmsAsync(long unitPaymentId, SubmitTenantSmsDto dto);
+
+        Task<List<PendingUnitPaymentDto>> GetPendingManualPaymentsAsync(long propertyId);
+        
+        Task<UnitPaymentsDto?> ApproveManualPaymentAsync(long unitPaymentId, ApproveUnitPaymentDto dto);
 
         Task HandleWebhookAsync(string reference, int status);
     }
