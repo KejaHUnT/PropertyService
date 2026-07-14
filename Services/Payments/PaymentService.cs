@@ -444,11 +444,13 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                     UnitId = unitPayment.UnitId,
                     TenantId = unitPayment.TenantId,
                     PropertyId = unitPayment.PropertyId,
+                    PeriodMonth = unitPayment.PeriodMonth,
+                    PeriodYear = unitPayment.PeriodYear,
                     Reference = item.Reference,
                     TenantAmount = item.TenantAmount,
                     TenantRawSms = item.TenantRawSms,
                     TenantSubmittedAt = item.TenantSubmittedAt
-                });
+                });                
             }
         
             return result;
