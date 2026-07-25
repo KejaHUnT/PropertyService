@@ -107,11 +107,11 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             // Allowed transitions using enum values
             bool allowed = (currentStatus, newStatus) switch
             {
-                (UnitStatus.Available, UnitStatus.Reserved) => true,
-                (UnitStatus.Available, UnitStatus.Occupied) => true,   // future: payment flow
+                (UnitStatus.Vacant, UnitStatus.Reserved) => true,
+                (UnitStatus.Vacant, UnitStatus.Occupied) => true,
                 (UnitStatus.Reserved, UnitStatus.Occupied) => true,    // manager approves existing tenant
-                (UnitStatus.Reserved, UnitStatus.Available) => true,   // manager rejects
-                (UnitStatus.Occupied, UnitStatus.Available) => true,   // manager releases unit
+                (UnitStatus.Reserved, UnitStatus.Vacant) => true,   // manager rejects
+                (UnitStatus.Occupied, UnitStatus.Vacant) => true, 
                 _ => false
             };
 
