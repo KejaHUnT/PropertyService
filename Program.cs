@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using StackExchange.Redis;
 using KejaHUnt_PropertiesAPI.Services.Payments;  // Redis
 using Minio; // Minio
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,12 @@ Log.Logger = new LoggerConfiguration()
         retainedFileCountLimit: 7
     ).CreateLogger();
 builder.Host.UseSerilog();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 // Add services to the container.
 // Add response compression
@@ -78,7 +85,11 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins("https://keja.kejahunt.co.ke")
+            policy.WithOrigins(
+                    "https://kejahunt.co.ke",
+                    "https://portal.kejahunt.co.ke",
+                    "http://localhost:8080"
+                  )
                   .AllowAnyMethod()
                   .AllowAnyHeader();
         });

@@ -1,4 +1,6 @@
-﻿namespace KejaHUnt_PropertiesAPI.Models.Dto
+﻿using KejaHUnt_PropertiesAPI.Models.Enums;
+
+namespace KejaHUnt_PropertiesAPI.Models.Dto
 {
     public class CreateUnitRequestDto
     {
@@ -8,7 +10,7 @@
         public double Size { get; set; }
         public int Floor { get; set; }
         public string Doornumber { get; set; }
-        public string Status { get; set; }
+        public UnitStatus Status { get; set; }
         public long PropertyId { get; set; }
     }
 }

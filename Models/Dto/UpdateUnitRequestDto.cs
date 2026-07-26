@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using KejaHUnt_PropertiesAPI.Models.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace KejaHUnt_PropertiesAPI.Models.Dto
 {
@@ -12,9 +13,9 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
         public double Size { get; set; }
         public int Floor { get; set; }
         public string DoorNumber { get; set; }
-        public string Status { get; set; }
+        public UnitStatus Status { get; set; }
         public Guid? DocumentId { get; set; }
         public long PropertyId { get; set; }
-        public IFormFile ImageFile { get; set; }     // New uploaded file for unit
+        public IFormFile ImageFile { get; set; }
     }
 }

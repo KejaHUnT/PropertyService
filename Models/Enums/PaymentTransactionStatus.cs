@@ -1,4 +1,4 @@
-﻿namespace KejaHUnt_PropertiesAPI.Models.enums
+﻿namespace KejaHUnt_PropertiesAPI.Models.Enums
 {
     public enum PaymentTransactionStatus
     {

@@ -13,7 +13,7 @@ namespace KejaHUnt_PropertiesAPI.Models.Domain
         public double Size { get; set; }
         public int Floor { get; set; }
         public string DoorNumber { get; set; }
-        public UnitStatus Status { get; set; } = UnitStatus.Available;
+        public UnitStatus Status { get; set; } = UnitStatus.Vacant;
         public string? ImageUrl { get; set; }
         public long PropertyId { get; set; }
         public Property Property { get; set; }

@@ -2,7 +2,7 @@ namespace KejaHUnt_PropertiesAPI.Models.Enums
 {
     public enum UnitStatus
     {
-        Available,
+        Vacant,
         Reserved,
         Occupied
     }

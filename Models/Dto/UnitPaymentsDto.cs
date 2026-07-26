@@ -1,4 +1,4 @@
-﻿using KejaHUnt_PropertiesAPI.Models.enums;
+﻿using KejaHUnt_PropertiesAPI.Models.Enums;
 
 namespace KejaHUnt_PropertiesAPI.Models.Dto
 {

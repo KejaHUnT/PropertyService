@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using KejaHUnt_PropertiesAPI.Models.Domain;
 using KejaHUnt_PropertiesAPI.Models.Dto;
-using KejaHUnt_PropertiesAPI.Models.enums;
 using KejaHUnt_PropertiesAPI.Models.Enums;    // <-- added for UnitStatus
 using KejaHUnt_PropertiesAPI.Repositories.Interface;
 using System.Text;
@@ -272,7 +271,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 var unit = await _unitRepository.GetUnitByIdAsync(unitPayment.UnitId);
 
                 // FIXED: compare enum values, not strings
-                if (unit != null && (unit.Status == UnitStatus.Reserved || unit.Status == UnitStatus.Available))
+                if (unit != null && (unit.Status == UnitStatus.Reserved || unit.Status == UnitStatus.Vacant))
                 {
                     _logger.LogInformation("Unit {UnitId} is {Status}, closing booking", unitPayment.UnitId, unit.Status);
 

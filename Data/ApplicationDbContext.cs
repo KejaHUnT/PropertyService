@@ -1,5 +1,5 @@
 ﻿using KejaHUnt_PropertiesAPI.Models.Domain;
-using KejaHUnt_PropertiesAPI.Models.enums;
+using KejaHUnt_PropertiesAPI.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 

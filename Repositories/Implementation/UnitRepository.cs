@@ -84,46 +84,30 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
         public async Task<Unit?> UpdateUnitStatusAsync(UnitStatusDto request)
         {
             var existingUnit = await _dbContext.Units.FirstOrDefaultAsync(x => x.Id == request.UnitId);
-
             if (existingUnit == null)
-            {
                 throw new InvalidOperationException("Unit not found.");
-            }
-
-            // Parse the incoming status string to enum
-            if (!Enum.TryParse<UnitStatus>(request.Status, true, out var newStatus))
-            {
-                throw new InvalidOperationException($"Invalid status value: '{request.Status}'");
-            }
-
+        
+            var newStatus = request.Status; // already a valid UnitStatus, no parsing needed
             var currentStatus = existingUnit.Status;
-
-            // Idempotent — already in the target status
+        
             if (currentStatus == newStatus)
-            {
                 return existingUnit;
-            }
-
-            // Allowed transitions using enum values
+        
             bool allowed = (currentStatus, newStatus) switch
             {
-                (UnitStatus.Available, UnitStatus.Reserved) => true,
-                (UnitStatus.Available, UnitStatus.Occupied) => true,
-                (UnitStatus.Reserved, UnitStatus.Occupied) => true,    // manager approves existing tenant
-                (UnitStatus.Reserved, UnitStatus.Available) => true,   // manager rejects
-                (UnitStatus.Occupied, UnitStatus.Available) => true,
+                (UnitStatus.Vacant, UnitStatus.Reserved) => true,
+                (UnitStatus.Vacant, UnitStatus.Occupied) => true,
+                (UnitStatus.Reserved, UnitStatus.Occupied) => true,
+                (UnitStatus.Reserved, UnitStatus.Vacant) => true,
+                (UnitStatus.Occupied, UnitStatus.Vacant) => true,
                 _ => false
             };
-
+        
             if (!allowed)
-            {
-                throw new InvalidOperationException(
-                    $"Cannot change unit status from '{currentStatus}' to '{newStatus}'.");
-            }
-
+                throw new InvalidOperationException($"Cannot change unit status from '{currentStatus}' to '{newStatus}'.");
+        
             existingUnit.Status = newStatus;
             await _dbContext.SaveChangesAsync();
-
             return existingUnit;
         }
     }
