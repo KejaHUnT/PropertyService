@@ -2,7 +2,6 @@
 using KejaHUnt_PropertiesAPI.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-
 namespace KejaHUnt_PropertiesAPI.Data
 {
     public class ApplicationDbContext : DbContext
@@ -10,7 +9,6 @@ namespace KejaHUnt_PropertiesAPI.Data
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
         }
-
         public DbSet<Property> Properties { get; set; }
         public DbSet<PendingProperty> PendingProperties { get; set; }
         public DbSet<Unit> Units { get; set; }
@@ -22,7 +20,7 @@ namespace KejaHUnt_PropertiesAPI.Data
         public DbSet<PendingPolicyDescription> PendingPolicyDescriptions { get; set; }
         public DbSet<UnitPayments> UnitPayments { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
-
+        public DbSet<Invoice> Invoices { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Existing configurations
@@ -30,15 +28,12 @@ namespace KejaHUnt_PropertiesAPI.Data
                 .HasMany(x => x.Transactions)
                 .WithOne(t => t.UnitPayment)
                 .HasForeignKey(t => t.UnitPaymentId);
-
             modelBuilder.Entity<UnitPayments>()
                 .Property(u => u.Status)
                 .HasConversion(new EnumToStringConverter<UnitPaymentStatus>());
-
             modelBuilder.Entity<PaymentTransaction>()
                 .Property(p => p.Status)
                 .HasConversion(new EnumToStringConverter<PaymentTransactionStatus>());
-
             // NEW: Convert Unit.Status enum to string
             modelBuilder.Entity<Unit>(entity =>
             {
