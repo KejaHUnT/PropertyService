@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KejaHUnt_PropertiesAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260807135011_AddInvoiceTable")]
+    [Migration("20260807140300_AddInvoiceTable")]
     partial class AddInvoiceTable
     {
         /// <inheritdoc />
@@ -529,19 +529,19 @@ namespace KejaHUnt_PropertiesAPI.Migrations
                     b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.Property", "Property")
                         .WithMany()
                         .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.Unit", "Unit")
                         .WithMany()
                         .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.UnitPayments", "UnitPayments")
                         .WithMany()
                         .HasForeignKey("UnitPaymentsId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Property");
