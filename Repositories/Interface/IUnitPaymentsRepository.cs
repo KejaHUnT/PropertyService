@@ -14,5 +14,13 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Interface
         Task<List<UnitPayments>> GetByTenantIdAsync(long tenantId);
         Task<List<UnitPayments>> GetByUnitIdAsync(long unitId);
         Task<UnitPayments?> GetByUnitAndPeriodAsync(long unitId, int month, int year);
+
+        /// <summary>
+        /// Applies a water charge to the UnitPayments row for the given unit+period,
+        /// keeping ExpectedAmount in sync. Returns null if no payment record exists yet
+        /// for that period — this method never creates one, since tenant assignment is
+        /// owned by a different service. Caller decides how to handle the null case.
+        /// </summary>
+        Task<UnitPayments?> ApplyWaterChargeAsync(long unitId, int month, int year, decimal waterAmount, long waterBillId);
     }
 }

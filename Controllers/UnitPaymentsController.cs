@@ -104,9 +104,9 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             }
         }        
 
-                // TENANT: "ALREADY PAID" — INITIATE MANUAL MPESA SUBMISSION
-                [HttpPost("manual/initiate")]
-                public async Task<IActionResult> InitiateManualMpesa([FromBody] InitiateManualMpesaDto dto)
+        // TENANT: "ALREADY PAID" — INITIATE MANUAL MPESA SUBMISSION
+        [HttpPost("manual/initiate")]
+        public async Task<IActionResult> InitiateManualMpesa([FromBody] InitiateManualMpesaDto dto)
                 {
                     try
                     {

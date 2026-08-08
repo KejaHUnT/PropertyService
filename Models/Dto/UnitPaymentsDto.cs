@@ -12,8 +12,14 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
         public int PeriodMonth { get; set; }
         public int PeriodYear { get; set; }
 
-        public decimal ExpectedAmount { get; set; }
+        public decimal RentAmount { get; set; }
+        public decimal WaterAmount { get; set; }
+        public decimal ExpectedAmount { get; set; } // RentAmount + WaterAmount
         public decimal PaidAmount { get; set; }
+
+        /// <summary>True if a WaterBill has been attached to this period's expected amount.</summary>
+        public bool IsWaterBilled { get; set; }
+        public long? WaterBillId { get; set; }
 
         public UnitPaymentStatus Status { get; set; }
 

@@ -12,6 +12,7 @@ using KejaHUnt_PropertiesAPI.Services.Tenants;
 using KejaHUnt_PropertiesAPI.Services.Invoices;
 using Minio; // Minio
 using System.Text.Json.Serialization;
+using KejaHUnt_PropertiesAPI.Services.WaterBills;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,8 +34,6 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-// Add services to the container.
-// Add response compression
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
@@ -49,7 +48,6 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options
     => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add Redis connection - ADD THIS
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
 {
     var connectionString = builder.Configuration.GetConnectionString("Redis") ?? "redis:6379";
@@ -57,7 +55,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
 });
 builder.Services.AddScoped<ICacheService, CacheService>();
 
-// MinIO
 builder.Services.AddSingleton<IMinioClient>(sp =>
 {
     return new MinioClient()
@@ -82,6 +79,10 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<ITenantServiceClient, TenantServiceClient>();
 builder.Services.AddHostedService<MonthlyInvoiceBackgroundService>();
+builder.Services.AddScoped<IWaterRateRepository, WaterRateRepository>();
+builder.Services.AddScoped<IWaterMeterReadingRepository, WaterMeterReadingRepository>();
+builder.Services.AddScoped<IWaterBillRepository, WaterBillRepository>();
+builder.Services.AddScoped<IWaterBillingService, WaterBillingService>();
 builder.Services.AddHttpClient(); 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -101,20 +102,16 @@ builder.Services.AddCors(options =>
         });
 });
 
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-// Added for debuging ***********************************************************************
 
 app.UseResponseCompression();
 
 app.UseDeveloperExceptionPage();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

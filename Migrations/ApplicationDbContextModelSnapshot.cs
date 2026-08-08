@@ -447,6 +447,9 @@ namespace KejaHUnt_PropertiesAPI.Migrations
                     b.Property<long>("PropertyId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal>("RentAmount")
+                        .HasColumnType("numeric");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -457,13 +460,144 @@ namespace KejaHUnt_PropertiesAPI.Migrations
                     b.Property<long>("UnitId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal>("WaterAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<long?>("WaterBillId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PropertyId");
 
-                    b.HasIndex("UnitId");
+                    b.HasIndex("WaterBillId")
+                        .IsUnique();
+
+                    b.HasIndex("UnitId", "PeriodMonth", "PeriodYear")
+                        .IsUnique();
 
                     b.ToTable("UnitPayments");
+                });
+
+            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.WaterBill", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("BillingMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BillingYear")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("PricePerUnit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("UnitId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("UnitPaymentsId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("WaterMeterReadingId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UnitId");
+
+                    b.HasIndex("WaterMeterReadingId")
+                        .IsUnique();
+
+                    b.ToTable("WaterBills");
+                });
+
+            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.WaterMeterReading", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("BillingMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BillingYear")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("CurrentReading")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("PreviousReading")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RecordedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("UnitId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("UnitsConsumed")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UnitId", "BillingYear", "BillingMonth")
+                        .IsUnique();
+
+                    b.ToTable("WaterMeterReadings");
+                });
+
+            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.WaterRate", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("PricePerUnit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<long>("PropertyId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PropertyId", "IsActive");
+
+                    b.ToTable("WaterRates");
                 });
 
             modelBuilder.Entity("OutDoorFeaturesProperty", b =>
@@ -637,9 +771,57 @@ namespace KejaHUnt_PropertiesAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.WaterBill", "WaterBill")
+                        .WithOne("UnitPayments")
+                        .HasForeignKey("KejaHUnt_PropertiesAPI.Models.Domain.UnitPayments", "WaterBillId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Property");
 
                     b.Navigation("Unit");
+
+                    b.Navigation("WaterBill");
+                });
+
+            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.WaterBill", b =>
+                {
+                    b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.Unit", "Unit")
+                        .WithMany("WaterBills")
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.WaterMeterReading", "Reading")
+                        .WithOne("Bill")
+                        .HasForeignKey("KejaHUnt_PropertiesAPI.Models.Domain.WaterBill", "WaterMeterReadingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reading");
+
+                    b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.WaterMeterReading", b =>
+                {
+                    b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.Unit", "Unit")
+                        .WithMany("WaterMeterReadings")
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.WaterRate", b =>
+                {
+                    b.HasOne("KejaHUnt_PropertiesAPI.Models.Domain.Property", "Property")
+                        .WithMany("WaterRates")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("OutDoorFeaturesProperty", b =>
@@ -682,16 +864,32 @@ namespace KejaHUnt_PropertiesAPI.Migrations
                     b.Navigation("UnitPayments");
 
                     b.Navigation("Units");
+
+                    b.Navigation("WaterRates");
                 });
 
             modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.Unit", b =>
                 {
                     b.Navigation("Payments");
+
+                    b.Navigation("WaterBills");
+
+                    b.Navigation("WaterMeterReadings");
                 });
 
             modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.UnitPayments", b =>
                 {
                     b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.WaterBill", b =>
+                {
+                    b.Navigation("UnitPayments");
+                });
+
+            modelBuilder.Entity("KejaHUnt_PropertiesAPI.Models.Domain.WaterMeterReading", b =>
+                {
+                    b.Navigation("Bill");
                 });
 #pragma warning restore 612, 618
         }

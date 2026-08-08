@@ -18,5 +18,7 @@ namespace KejaHUnt_PropertiesAPI.Models.Domain
         public long PropertyId { get; set; }
         public Property Property { get; set; }
         public ICollection<UnitPayments> Payments { get; set; } = new List<UnitPayments>();
+        public ICollection<WaterMeterReading> WaterMeterReadings { get; set; } = new List<WaterMeterReading>();
+        public ICollection<WaterBill> WaterBills { get; set; } = new List<WaterBill>();
     }
 }
