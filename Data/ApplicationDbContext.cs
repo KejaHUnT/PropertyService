@@ -22,7 +22,9 @@ namespace KejaHUnt_PropertiesAPI.Data
         public DbSet<PendingPolicyDescription> PendingPolicyDescriptions { get; set; }
         public DbSet<UnitPayments> UnitPayments { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
-
+        public DbSet<WaterRate> WaterRates { get; set; }
+        public DbSet<WaterMeterReading> WaterMeterReadings { get; set; }
+        public DbSet<WaterBill> WaterBills { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Existing configurations
@@ -45,6 +47,27 @@ namespace KejaHUnt_PropertiesAPI.Data
                 entity.Property(e => e.Status)
                     .HasConversion<string>();
             });
+            modelBuilder.Entity<WaterRate>()
+                .HasIndex(r => new { r.PropertyId, r.IsActive });
+
+            modelBuilder.Entity<WaterMeterReading>()
+                .HasIndex(r => new { r.UnitId, r.BillingYear, r.BillingMonth })
+                .IsUnique();
+
+            modelBuilder.Entity<WaterBill>()
+                .HasOne(b => b.Reading)
+                .WithOne(r => r.Bill)
+                .HasForeignKey<WaterBill>(b => b.WaterMeterReadingId);
+
+            modelBuilder.Entity<UnitPayments>()
+                .HasOne(p => p.WaterBill)
+                .WithOne(b => b.UnitPayments)
+                .HasForeignKey<UnitPayments>(p => p.WaterBillId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<UnitPayments>()
+                .HasIndex(p => new { p.UnitId, p.PeriodMonth, p.PeriodYear })
+                .IsUnique();
         }
     }
 }

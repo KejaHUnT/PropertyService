@@ -67,7 +67,8 @@ namespace KejaHUnt_PropertiesAPI.Utility
 
             CreateMap<UnitPayments, UnitPaymentsDto>()
                 .ForMember(dest => dest.Transactions,
-                           opt => opt.MapFrom(src => src.Transactions));
+                           opt => opt.MapFrom(src => src.Transactions))
+                .ForMember(dest => dest.IsWaterBilled, opt => opt.MapFrom(src => src.WaterBillId.HasValue));
         }
     }
 }

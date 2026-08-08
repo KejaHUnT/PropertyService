@@ -10,6 +10,7 @@ using StackExchange.Redis;
 using KejaHUnt_PropertiesAPI.Services.Payments;  // Redis
 using Minio; // Minio
 using System.Text.Json.Serialization;
+using KejaHUnt_PropertiesAPI.Services.WaterBills;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,6 +77,10 @@ builder.Services.AddScoped<IFeatureRepository, FeatureRepository>();
 builder.Services.AddScoped<IUnitPaymentsRepository, UnitPaymentsRepository>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+builder.Services.AddScoped<IWaterRateRepository, WaterRateRepository>();
+builder.Services.AddScoped<IWaterMeterReadingRepository, WaterMeterReadingRepository>();
+builder.Services.AddScoped<IWaterBillRepository, WaterBillRepository>();
+builder.Services.AddScoped<IWaterBillingService, WaterBillingService>();
 builder.Services.AddHttpClient(); 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(typeof(MappingProfile));

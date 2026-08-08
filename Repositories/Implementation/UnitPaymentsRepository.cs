@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
 {
+   
     public class UnitPaymentsRepository : IUnitPaymentsRepository
     {
         private readonly ApplicationDbContext _db;
@@ -16,6 +17,7 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
 
         public async Task<UnitPayments> CreateAsync(UnitPayments unitPayments)
         {
+            unitPayments.RecalculateExpectedAmount();
             await _db.UnitPayments.AddAsync(unitPayments);
             await _db.SaveChangesAsync();
             return unitPayments;
@@ -51,10 +53,13 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             existing.PeriodMonth = unitPayments.PeriodMonth;
             existing.PeriodYear = unitPayments.PeriodYear;
 
-            // IMPORTANT
-            existing.ExpectedAmount = unitPayments.ExpectedAmount;
+            // IMPORTANT — RentAmount is caller-controlled; WaterAmount is left untouched
+            // here so a generic update can never accidentally wipe an applied water charge.
+            existing.RentAmount = unitPayments.RentAmount;
             existing.PaidAmount = unitPayments.PaidAmount;
             existing.Status = unitPayments.Status;
+
+            existing.RecalculateExpectedAmount();
 
             await _db.SaveChangesAsync();
             return existing;
@@ -105,6 +110,22 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                     x.UnitId == unitId &&
                     x.PeriodMonth == month &&
                     x.PeriodYear == year);
+        }
+
+        public async Task<UnitPayments?> ApplyWaterChargeAsync(long unitId, int month, int year, decimal waterAmount, long waterBillId)
+        {
+            var payment = await _db.UnitPayments
+                .FirstOrDefaultAsync(x => x.UnitId == unitId && x.PeriodMonth == month && x.PeriodYear == year);
+
+            if (payment == null)
+                return null; // no payment row yet for this period — caller (WaterBillingService) records this as unapplied
+
+            payment.WaterAmount = waterAmount;
+            payment.WaterBillId = waterBillId;
+            payment.RecalculateExpectedAmount();
+
+            await _db.SaveChangesAsync();
+            return payment;
         }
     }
 }

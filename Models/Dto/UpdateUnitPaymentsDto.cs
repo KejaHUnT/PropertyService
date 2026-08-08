@@ -2,6 +2,6 @@
 {
     public class UpdateUnitPaymentsDto
     {
-        public decimal ExpectedAmount { get; set; }
+        public decimal RentAmount { get; set; }
     }
 }

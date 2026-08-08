@@ -16,5 +16,6 @@
         public ICollection<OutDoorFeatures?> OutdoorFeatures { get; set; } = new List<OutDoorFeatures>();
         public ICollection<PolicyDescription?> PolicyDescriptions { get; set; } = new List<PolicyDescription>();
         public ICollection<UnitPayments?> UnitPayments { get; set; } = new List<UnitPayments>();
+        public ICollection<WaterRate> WaterRates { get; set; } = new List<WaterRate>();
     }
 }
