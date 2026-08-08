@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KejaHUnt_PropertiesAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260807140300_AddInvoiceTable")]
+    [Migration("20260808151643_AddInvoiceTable")]
     partial class AddInvoiceTable
     {
         /// <inheritdoc />
@@ -125,6 +125,10 @@ namespace KejaHUnt_PropertiesAPI.Migrations
                     b.Property<decimal>("RentAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<long>("TenantId")
                         .HasColumnType("bigint");

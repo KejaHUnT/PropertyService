@@ -1,3 +1,5 @@
+using KejaHUnt_PropertiesAPI.Models.Enums;
+
 namespace KejaHUnt_PropertiesAPI.Models.Dto
 {
     public class InvoiceDto
@@ -20,6 +22,8 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
         public decimal RentAmount { get; set; }
         public decimal WaterBillAmount { get; set; }
         public decimal TotalAmount { get; set; }
+
+        public UnitPaymentStatus Status { get; set; }
 
         public DateTime DueDate { get; set; }
         public DateTime CreatedAt { get; set; }

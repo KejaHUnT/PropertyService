@@ -6,6 +6,7 @@ using KejaHUnt_PropertiesAPI.Repositories.Interface;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using KejaHUnt_PropertiesAPI.Services.Invoices;
 
 namespace KejaHUnt_PropertiesAPI.Services.Payments
 {
@@ -265,6 +266,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 unitPayment.ExpectedAmount);
 
             await _unitPaymentsRepo.UpdateAsync(unitPayment);
+            await _invoiceService.SyncInvoiceStatusFromUnitPaymentsAsync(unitPayment.Id, unitPayment.Status);
 
             if (unitPayment.Status == UnitPaymentStatus.Paid)
             {
@@ -544,6 +546,27 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 return UnitPaymentStatus.Overpaid;
 
             return UnitPaymentStatus.Pending;
+        }
+        private readonly IInvoiceService _invoiceService;
+        
+        public PaymentService(
+            HttpClient httpClient,
+            IConfiguration config,
+            IUnitPaymentsRepository unitPaymentsRepo,
+            IUnitRepository unitRepository,
+            IPaymentTransactionRepository transactionRepo,
+            IInvoiceService invoiceService,
+            IMapper mapper,
+            ILogger<PaymentService> logger)
+        {
+            _httpClient = httpClient;
+            _config = config;
+            _unitPaymentsRepo = unitPaymentsRepo;
+            _unitRepository = unitRepository;
+            _transactionRepo = transactionRepo;
+            _invoiceService = invoiceService;
+            _mapper = mapper;
+            _logger = logger;
         }
     }
 }

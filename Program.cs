@@ -8,6 +8,7 @@ using Serilog;
 using Microsoft.AspNetCore.ResponseCompression;
 using StackExchange.Redis;
 using KejaHUnt_PropertiesAPI.Services.Payments;
+using KejaHUnt_PropertiesAPI.Services.Tenants;
 using KejaHUnt_PropertiesAPI.Services.Invoices;
 using Minio; // Minio
 using System.Text.Json.Serialization;
@@ -79,6 +80,8 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<ITenantServiceClient, TenantServiceClient>();
+builder.Services.AddHostedService<MonthlyInvoiceBackgroundService>();
 builder.Services.AddHttpClient(); 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(typeof(MappingProfile));

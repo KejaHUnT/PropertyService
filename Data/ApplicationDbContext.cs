@@ -34,29 +34,35 @@ namespace KejaHUnt_PropertiesAPI.Data
             modelBuilder.Entity<PaymentTransaction>()
                 .Property(p => p.Status)
                 .HasConversion(new EnumToStringConverter<PaymentTransactionStatus>());
-            modelBuilder.Entity<Invoice>()
-                .HasOne(i => i.Property)
-                .WithMany()
-                .HasForeignKey(i => i.PropertyId)
-                .OnDelete(DeleteBehavior.Restrict);
-            
-            modelBuilder.Entity<Invoice>()
-                .HasOne(i => i.Unit)
-                .WithMany()
-                .HasForeignKey(i => i.UnitId)
-                .OnDelete(DeleteBehavior.Restrict);
-            
-            modelBuilder.Entity<Invoice>()
-                .HasOne(i => i.UnitPayments)
-                .WithMany()
-                .HasForeignKey(i => i.UnitPaymentsId)
-                .OnDelete(DeleteBehavior.Restrict);                
             // NEW: Convert Unit.Status enum to string
             modelBuilder.Entity<Unit>(entity =>
             {
                 entity.Property(e => e.Status)
                     .HasConversion<string>();
             });
+
+            // Invoice configuration
+            modelBuilder.Entity<Invoice>()
+                .Property(i => i.Status)
+                .HasConversion(new EnumToStringConverter<UnitPaymentStatus>());
+
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.Property)
+                .WithMany()
+                .HasForeignKey(i => i.PropertyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.Unit)
+                .WithMany()
+                .HasForeignKey(i => i.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.UnitPayments)
+                .WithMany()
+                .HasForeignKey(i => i.UnitPaymentsId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

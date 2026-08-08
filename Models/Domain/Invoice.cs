@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using KejaHUnt_PropertiesAPI.Models.Enums;
 
 namespace KejaHUnt_PropertiesAPI.Models.Domain
 {
@@ -26,10 +27,12 @@ namespace KejaHUnt_PropertiesAPI.Models.Domain
         public decimal RentAmount { get; set; }      // snapshot of UnitPayments.ExpectedAmount at generation time
 
         [Precision(18, 2)]
-        public decimal WaterBillAmount { get; set; }
+        public decimal WaterBillAmount { get; set; } = 0;
 
         [Precision(18, 2)]
         public decimal TotalAmount { get; set; }     // RentAmount + WaterBillAmount
+
+        public UnitPaymentStatus Status { get; set; } = UnitPaymentStatus.Pending;
 
         public DateTime DueDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

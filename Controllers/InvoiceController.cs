@@ -17,9 +17,9 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             _logger = logger;
         }
 
-        // GENERATE (OR UPDATE) INVOICE — called when a manager updates a unit's water bill
-        [HttpPost("generate")]
-        public async Task<IActionResult> Generate([FromBody] CreateInvoiceDto dto)
+        // MANAGER: UPDATE WATER BILL FOR A UNIT/PERIOD
+        [HttpPut("water-bill")]
+        public async Task<IActionResult> UpdateWaterBill([FromBody] UpdateWaterBillDto dto)
         {
             try
             {
@@ -29,12 +29,13 @@ namespace KejaHUnt_PropertiesAPI.Controllers
                 if (dto.WaterBillAmount < 0)
                     return BadRequest("Water bill amount cannot be negative");
 
-                var result = await _invoiceService.GenerateInvoiceAsync(dto);
+                var result = await _invoiceService.UpdateWaterBillAsync(
+                    dto.UnitId, dto.PeriodMonth, dto.PeriodYear, dto.WaterBillAmount);
 
                 return Ok(new
                 {
                     success = true,
-                    message = "Invoice generated successfully",
+                    message = "Water bill updated on invoice",
                     data = result
                 });
             }
@@ -44,12 +45,39 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating invoice");
+                _logger.LogError(ex, "Error updating water bill on invoice");
 
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "Error generating invoice",
+                    message = "Error updating water bill",
+                    error = ex.Message
+                });
+            }
+        }
+
+        // ADMIN/TESTING: MANUALLY TRIGGER THE MONTHLY GENERATION JOB
+        [HttpPost("generate-monthly")]
+        public async Task<IActionResult> GenerateMonthly()
+        {
+            try
+            {
+                await _invoiceService.GenerateMonthlyInvoicesAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Monthly invoice generation completed"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error running monthly invoice generation");
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error running monthly invoice generation",
                     error = ex.Message
                 });
             }

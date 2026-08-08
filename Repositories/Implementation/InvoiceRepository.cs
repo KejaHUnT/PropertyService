@@ -36,6 +36,19 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             return existing;
         }
 
+        public async Task<Invoice> UpdateStatusAsync(Invoice invoice)
+        {
+            var existing = await _db.Invoices.FirstOrDefaultAsync(x => x.Id == invoice.Id);
+
+            if (existing == null)
+                throw new ArgumentException($"Invoice {invoice.Id} not found");
+
+            existing.Status = invoice.Status;
+
+            await _db.SaveChangesAsync();
+            return existing;
+        }
+
         public async Task<Invoice?> GetByIdAsync(long id)
         {
             return await _db.Invoices
@@ -88,6 +101,12 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
                     x.UnitId == unitId &&
                     x.PeriodMonth == month &&
                     x.PeriodYear == year);
+        }
+
+        public async Task<Invoice?> GetByUnitPaymentsIdAsync(long unitPaymentsId)
+        {
+            return await _db.Invoices
+                .FirstOrDefaultAsync(x => x.UnitPaymentsId == unitPaymentsId);
         }
     }
 }
