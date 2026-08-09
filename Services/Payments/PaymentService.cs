@@ -45,7 +45,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
         /// billing pipeline applies a charge. ExpectedAmount is never set directly.
         /// </summary>
         private async Task<UnitPayments> GetOrCreateUnitPaymentAsync(
-            long unitId, long propertyId, long tenantId, int periodMonth, int periodYear)
+            long unitId, long propertyId, long tenantId, int periodMonth, int periodYear, decimal paidAmount)
         {
             var existing = await _unitPaymentsRepo.GetByUnitAndPeriodAsync(unitId, periodMonth, periodYear);
             if (existing != null)
@@ -64,7 +64,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 PeriodYear = periodYear,
                 RentAmount = unit.Price,
                 WaterAmount = 0,
-                PaidAmount = 0,
+                PaidAmount = paidAmount,
                 Status = UnitPaymentStatus.Pending
             };
             payment.RecalculateExpectedAmount();
@@ -90,7 +90,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 throw new ArgumentException("PeriodMonth must be between 1 and 12.");
 
             var unitPayment = await GetOrCreateUnitPaymentAsync(
-                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear);
+                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear, dto.Amount);
 
             var request = new InitializePaymentRequest
             {
@@ -158,7 +158,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 throw new ArgumentException("Amount must be greater than 0.");
 
             var unitPayment = await GetOrCreateUnitPaymentAsync(
-                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear);
+                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear, dto.Amount);
 
             var request = new InitializePaymentRequest
             {
@@ -324,7 +324,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 throw new ArgumentException("MpesaCode is required when PaymentType is 'mpesa'.");
 
             var unitPayment = await GetOrCreateUnitPaymentAsync(
-                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear);
+                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear, dto.Amount);
 
             // Property generates the reference — avoids the webhook race condition
             var reference = $"{_config["PaymentService:ClientId"]}_{Guid.NewGuid():N}";
@@ -340,7 +340,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
 
             var manualRequest = new
             {
-                reference,
+                reference = transaction.Reference,
                 amount = dto.Amount,
                 phoneNumber = dto.PhoneNumber,
                 paymentType = dto.PaymentType,
