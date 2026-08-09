@@ -98,7 +98,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 AccountId = $"{_config["PaymentService:ClientId"]}-{dto.PropertyId}",
                 Amount = dto.Amount,
                 Currency = "KES",
-                Description = $"Rent {dto.PeriodMonth}/{dto.PeriodYear} · Unit {dto.UnitId} · Tenant {dto.TenantId}",
+                Description = $"Rent {dto.PeriodMonth}/{dto.PeriodYear}",
                 WebhookUrl = _config["PaymentService:WebhookUrl"],
                 GatewaySecretKey = _config["PaymentService:GatewaySecretKey"]
             };
