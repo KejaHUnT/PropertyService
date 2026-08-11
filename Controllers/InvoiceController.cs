@@ -43,6 +43,36 @@ namespace KejaHUnt_PropertiesAPI.Controllers
             }
         }
 
+        // ADMIN/TESTING: BACKFILL AN INVOICE FOR A SPECIFIC PERIOD (e.g. August, before the 28th automation starts)
+        [HttpPost("generate-for-period")]
+        public async Task<IActionResult> GenerateForPeriod([FromQuery] int month, [FromQuery] int year)
+        {
+            try
+            {
+                if (month is < 1 or > 12)
+                    return BadRequest("Month must be between 1 and 12");
+        
+                await _invoiceService.GenerateInvoicesForPeriodAsync(month, year);
+        
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Invoice generation completed for {month}/{year}"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error running invoice generation for period");
+        
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error running invoice generation for period",
+                    error = ex.Message
+                });
+            }
+        }        
+
         // GET ALL
         [HttpGet]
         public async Task<IActionResult> GetAll()

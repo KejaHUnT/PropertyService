@@ -28,16 +28,24 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
             _logger = logger;
         }
 
-        // RUNS ON THE 28TH — generates next month's invoice (rent only) for every occupied unit
+        // RUNS ON THE 28TH — generates NEXT month's invoice (rent only) for every occupied unit
         public async Task GenerateMonthlyInvoicesAsync()
+        {
+            var nextPeriod = DateTime.UtcNow.AddMonths(1);
+            await GenerateForPeriodInternalAsync(nextPeriod.Month, nextPeriod.Year);
+        }
+        
+        // Same generation logic, targeted at an explicit period — for one-off backfills
+        public async Task GenerateInvoicesForPeriodAsync(int periodMonth, int periodYear)
+        {
+            await GenerateForPeriodInternalAsync(periodMonth, periodYear);
+        }
+        
+        private async Task GenerateForPeriodInternalAsync(int periodMonth, int periodYear)
         {
             var units = await _unitRepository.GetAllAsync();
             var occupiedUnits = units.Where(u => u.Status != UnitStatus.Vacant).ToList();
-
-            var nextPeriod = DateTime.UtcNow.AddMonths(1);
-            var periodMonth = nextPeriod.Month;
-            var periodYear = nextPeriod.Year;
-
+        
             foreach (var unit in occupiedUnits)
             {
                 try
@@ -48,14 +56,14 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                         _logger.LogInformation("Invoice already exists for unit {UnitId} for {Month}/{Year}, skipping", unit.Id, periodMonth, periodYear);
                         continue;
                     }
-
+        
                     var tenant = await _tenantServiceClient.GetActiveTenantByUnitIdAsync(unit.Id);
                     if (tenant == null)
                     {
                         _logger.LogInformation("No active tenant for unit {UnitId}, skipping invoice generation", unit.Id);
                         continue;
                     }
-
+        
                     var unitPayments = await _unitPaymentsRepository.GetByUnitAndPeriodAsync(unit.Id, periodMonth, periodYear);
                     if (unitPayments == null)
                     {
@@ -74,7 +82,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                         unitPayments.RecalculateExpectedAmount();
                         unitPayments = await _unitPaymentsRepository.CreateAsync(unitPayments);
                     }
-
+        
                     var invoice = new Invoice
                     {
                         UnitId = unit.Id,
@@ -89,7 +97,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                         Status = unitPayments.Status,
                         DueDate = new DateTime(periodYear, periodMonth, 10)
                     };
-
+        
                     await _invoiceRepository.CreateAsync(invoice);
                     _logger.LogInformation("Generated invoice for unit {UnitId}, tenant {TenantId}, {Month}/{Year}", unit.Id, tenant.Id, periodMonth, periodYear);
                 }
