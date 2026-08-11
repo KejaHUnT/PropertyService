@@ -1,4 +1,3 @@
-using KejaHUnt_PropertiesAPI.Models.Dto;
 using KejaHUnt_PropertiesAPI.Services.Invoices;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,45 +14,6 @@ namespace KejaHUnt_PropertiesAPI.Controllers
         {
             _invoiceService = invoiceService;
             _logger = logger;
-        }
-
-        // MANAGER: UPDATE WATER BILL FOR A UNIT/PERIOD
-        [HttpPut("water-bill")]
-        public async Task<IActionResult> UpdateWaterBill([FromBody] UpdateWaterBillDto dto)
-        {
-            try
-            {
-                if (dto == null)
-                    return BadRequest("Invalid request data");
-
-                if (dto.WaterBillAmount < 0)
-                    return BadRequest("Water bill amount cannot be negative");
-
-                var result = await _invoiceService.UpdateWaterBillAsync(
-                    dto.UnitId, dto.PeriodMonth, dto.PeriodYear, dto.WaterBillAmount);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "Water bill updated on invoice",
-                    data = result
-                });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating water bill on invoice");
-
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = "Error updating water bill",
-                    error = ex.Message
-                });
-            }
         }
 
         // ADMIN/TESTING: MANUALLY TRIGGER THE MONTHLY GENERATION JOB

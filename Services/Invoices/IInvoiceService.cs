@@ -1,6 +1,3 @@
-using KejaHUnt_PropertiesAPI.Models.Dto;
-using KejaHUnt_PropertiesAPI.Models.Enums;
-
 namespace KejaHUnt_PropertiesAPI.Services.Invoices
 {
     public interface IInvoiceService
@@ -8,16 +5,15 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
         // Runs on the 28th — creates next month's invoice (rent only) for every occupied unit
         Task GenerateMonthlyInvoicesAsync();
 
-        // Called when a manager updates a unit's water bill for a period
-        Task<InvoiceDto> UpdateWaterBillAsync(long unitId, int periodMonth, int periodYear, decimal waterBillAmount);
+        // Pulls current RentAmount/WaterAmount/ExpectedAmount/Status from the linked UnitPayments
+        // row and syncs them onto the invoice. Called after anything changes UnitPayments —
+        // a payment webhook, or WaterBillingService applying a water charge.
+        Task SyncInvoiceFromUnitPaymentsAsync(long unitPaymentsId);
 
-        // Called from the payment webhook to mirror UnitPayments.Status onto the linked invoice
-        Task SyncInvoiceStatusFromUnitPaymentsAsync(long unitPaymentsId, UnitPaymentStatus status);
-
-        Task<InvoiceDto?> GetByIdAsync(long id);
-        Task<List<InvoiceDto>> GetAllAsync();
-        Task<List<InvoiceDto>> GetByPropertyIdAsync(long propertyId);
-        Task<List<InvoiceDto>> GetByUnitIdAsync(long unitId);
-        Task<List<InvoiceDto>> GetByTenantIdAsync(long tenantId);
+        Task<Models.Dto.InvoiceDto?> GetByIdAsync(long id);
+        Task<List<Models.Dto.InvoiceDto>> GetAllAsync();
+        Task<List<Models.Dto.InvoiceDto>> GetByPropertyIdAsync(long propertyId);
+        Task<List<Models.Dto.InvoiceDto>> GetByUnitIdAsync(long unitId);
+        Task<List<Models.Dto.InvoiceDto>> GetByTenantIdAsync(long tenantId);
     }
 }

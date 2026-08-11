@@ -17,6 +17,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
         private readonly IUnitPaymentsRepository _unitPaymentsRepo;
         private readonly IUnitRepository _unitRepository;
         private readonly IPaymentTransactionRepository _transactionRepo;
+        private readonly IInvoiceService _invoiceService;
         private readonly IMapper _mapper;
         private readonly ILogger<PaymentService> _logger;
 
@@ -26,6 +27,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             IUnitPaymentsRepository unitPaymentsRepo,
             IUnitRepository unitRepository,
             IPaymentTransactionRepository transactionRepo,
+            IInvoiceService invoiceService,
             IMapper mapper,
             ILogger<PaymentService> logger)
         {
@@ -34,6 +36,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             _unitPaymentsRepo = unitPaymentsRepo;
             _unitRepository = unitRepository;
             _transactionRepo = transactionRepo;
+            _invoiceService = invoiceService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -45,7 +48,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
         /// billing pipeline applies a charge. ExpectedAmount is never set directly.
         /// </summary>
         private async Task<UnitPayments> GetOrCreateUnitPaymentAsync(
-            long unitId, long propertyId, long tenantId, int periodMonth, int periodYear, decimal paidAmount)
+            long unitId, long propertyId, long tenantId, int periodMonth, int periodYear)
         {
             var existing = await _unitPaymentsRepo.GetByUnitAndPeriodAsync(unitId, periodMonth, periodYear);
             if (existing != null)
@@ -64,7 +67,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 PeriodYear = periodYear,
                 RentAmount = unit.Price,
                 WaterAmount = 0,
-                PaidAmount = paidAmount,
+                PaidAmount = 0,
                 Status = UnitPaymentStatus.Pending
             };
             payment.RecalculateExpectedAmount();
@@ -90,7 +93,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 throw new ArgumentException("PeriodMonth must be between 1 and 12.");
 
             var unitPayment = await GetOrCreateUnitPaymentAsync(
-                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear, dto.Amount);
+                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear);
 
             var request = new InitializePaymentRequest
             {
@@ -128,9 +131,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
             if (paymentResponse == null)
                 throw new Exception("Invalid payment response from payment service.");
 
-            // SubmitTenantMpesaSmsAsync locates this transaction later purely by Reference —
-            // a blank reference here means the tenant-SMS step will 404 downstream with no
-            // clear cause. Fail loudly now instead of silently later.
             if (string.IsNullOrWhiteSpace(paymentResponse.Reference))
                 throw new Exception("Payment service returned an empty reference for the manual mpesa initiation.");
 
@@ -158,7 +158,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 throw new ArgumentException("Amount must be greater than 0.");
 
             var unitPayment = await GetOrCreateUnitPaymentAsync(
-                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear, dto.Amount);
+                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear);
 
             var request = new InitializePaymentRequest
             {
@@ -280,12 +280,10 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 .Where(t => t.Status == PaymentTransactionStatus.Success)
                 .Sum(t => t.Amount);
 
-            unitPayment.Status = CalculateUnitPaymentStatus(
-                unitPayment.PaidAmount,
-                unitPayment.ExpectedAmount);
+            unitPayment.RecalculateStatus();
 
             await _unitPaymentsRepo.UpdateAsync(unitPayment);
-            await _invoiceService.SyncInvoiceStatusFromUnitPaymentsAsync(unitPayment.Id, unitPayment.Status);
+            await _invoiceService.SyncInvoiceFromUnitPaymentsAsync(unitPayment.Id);
 
             if (unitPayment.Status == UnitPaymentStatus.Paid)
             {
@@ -324,7 +322,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 throw new ArgumentException("MpesaCode is required when PaymentType is 'mpesa'.");
 
             var unitPayment = await GetOrCreateUnitPaymentAsync(
-                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear, dto.Amount);
+                dto.UnitId, dto.PropertyId, dto.TenantId, dto.PeriodMonth, dto.PeriodYear);
 
             // Property generates the reference — avoids the webhook race condition
             var reference = $"{_config["PaymentService:ClientId"]}_{Guid.NewGuid():N}";
@@ -340,7 +338,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
 
             var manualRequest = new
             {
-                reference = transaction.Reference,
+                reference,
                 amount = dto.Amount,
                 phoneNumber = dto.PhoneNumber,
                 paymentType = dto.PaymentType,
@@ -411,8 +409,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 throw new Exception($"Payment API error: {errorBody}");
             }
 
-            // Status is unchanged at this point (still AwaitingManager on the microservice
-            // side) — refetch anyway to guard against a concurrent write.
             var refreshed = await _unitPaymentsRepo.GetByIdAsync(unitPaymentId);
             return _mapper.Map<UnitPaymentsDto>(refreshed);
         }
@@ -540,44 +536,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 PaymentStatus.Failed => PaymentTransactionStatus.Failed,
                 _ => PaymentTransactionStatus.Failed
             };
-        }
-
-        private UnitPaymentStatus CalculateUnitPaymentStatus(decimal paid, decimal expected)
-        {
-            if (paid == 0)
-                return UnitPaymentStatus.Pending;
-
-            if (paid < expected)
-                return UnitPaymentStatus.Partial;
-
-            if (paid == expected)
-                return UnitPaymentStatus.Paid;
-
-            if (paid > expected)
-                return UnitPaymentStatus.Overpaid;
-
-            return UnitPaymentStatus.Pending;
-        }
-        private readonly IInvoiceService _invoiceService;
-        
-        public PaymentService(
-            HttpClient httpClient,
-            IConfiguration config,
-            IUnitPaymentsRepository unitPaymentsRepo,
-            IUnitRepository unitRepository,
-            IPaymentTransactionRepository transactionRepo,
-            IInvoiceService invoiceService,
-            IMapper mapper,
-            ILogger<PaymentService> logger)
-        {
-            _httpClient = httpClient;
-            _config = config;
-            _unitPaymentsRepo = unitPaymentsRepo;
-            _unitRepository = unitRepository;
-            _transactionRepo = transactionRepo;
-            _invoiceService = invoiceService;
-            _mapper = mapper;
-            _logger = logger;
         }
     }
 }

@@ -21,28 +21,18 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             return invoice;
         }
 
-        public async Task<Invoice> UpdateAsync(Invoice invoice)
+        // Syncs RentAmount/WaterBillAmount/TotalAmount/Status from UnitPayments onto this invoice.
+        // Called whenever UnitPayments changes — a payment, or a water charge being applied.
+        public async Task<Invoice> UpdateFromUnitPaymentsAsync(Invoice invoice)
         {
             var existing = await _db.Invoices.FirstOrDefaultAsync(x => x.Id == invoice.Id);
 
             if (existing == null)
                 throw new ArgumentException($"Invoice {invoice.Id} not found");
 
-            existing.WaterBillAmount = invoice.WaterBillAmount;
             existing.RentAmount = invoice.RentAmount;
+            existing.WaterBillAmount = invoice.WaterBillAmount;
             existing.TotalAmount = invoice.TotalAmount;
-
-            await _db.SaveChangesAsync();
-            return existing;
-        }
-
-        public async Task<Invoice> UpdateStatusAsync(Invoice invoice)
-        {
-            var existing = await _db.Invoices.FirstOrDefaultAsync(x => x.Id == invoice.Id);
-
-            if (existing == null)
-                throw new ArgumentException($"Invoice {invoice.Id} not found");
-
             existing.Status = invoice.Status;
 
             await _db.SaveChangesAsync();

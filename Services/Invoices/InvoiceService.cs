@@ -42,7 +42,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
             {
                 try
                 {
-                    // Skip if an invoice already exists for this unit/period (idempotent re-runs)
                     var existingInvoice = await _invoiceRepository.GetByUnitAndPeriodAsync(unit.Id, periodMonth, periodYear);
                     if (existingInvoice != null)
                     {
@@ -67,10 +66,12 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                             TenantId = tenant.Id,
                             PeriodMonth = periodMonth,
                             PeriodYear = periodYear,
-                            ExpectedAmount = unit.Price,
+                            RentAmount = unit.Price,
+                            WaterAmount = 0,
                             PaidAmount = 0,
                             Status = UnitPaymentStatus.Pending
                         };
+                        unitPayments.RecalculateExpectedAmount();
                         unitPayments = await _unitPaymentsRepository.CreateAsync(unitPayments);
                     }
 
@@ -82,10 +83,10 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                         UnitPaymentsId = unitPayments.Id,
                         PeriodMonth = periodMonth,
                         PeriodYear = periodYear,
-                        RentAmount = unitPayments.ExpectedAmount,
-                        WaterBillAmount = 0,
+                        RentAmount = unitPayments.RentAmount,
+                        WaterBillAmount = unitPayments.WaterAmount,
                         TotalAmount = unitPayments.ExpectedAmount,
-                        Status = UnitPaymentStatus.Pending,
+                        Status = unitPayments.Status,
                         DueDate = new DateTime(periodYear, periodMonth, 10)
                     };
 
@@ -94,31 +95,14 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                 }
                 catch (Exception ex)
                 {
-                    // Don't let one unit's failure stop the whole batch
                     _logger.LogError(ex, "Failed to generate invoice for unit {UnitId}", unit.Id);
                 }
             }
         }
 
-        // MANAGER UPDATES WATER BILL FOR A UNIT/PERIOD
-        public async Task<InvoiceDto> UpdateWaterBillAsync(long unitId, int periodMonth, int periodYear, decimal waterBillAmount)
-        {
-            var invoice = await _invoiceRepository.GetByUnitAndPeriodAsync(unitId, periodMonth, periodYear);
-            if (invoice == null)
-                throw new ArgumentException(
-                    $"No invoice found for unit {unitId} for {periodMonth}/{periodYear}. It should have been created by the monthly generation job.");
-
-            invoice.WaterBillAmount = waterBillAmount;
-            invoice.TotalAmount = invoice.RentAmount + waterBillAmount;
-
-            var updated = await _invoiceRepository.UpdateAsync(invoice);
-
-            var refreshed = await _invoiceRepository.GetByIdAsync(updated.Id);
-            return MapToDto(refreshed!);
-        }
-
-        // CALLED FROM THE PAYMENT WEBHOOK TO MIRROR UnitPayments.Status ONTO THE LINKED INVOICE
-        public async Task SyncInvoiceStatusFromUnitPaymentsAsync(long unitPaymentsId, UnitPaymentStatus status)
+        // Pulls current RentAmount/WaterAmount/ExpectedAmount/Status from UnitPayments and
+        // syncs them onto the linked invoice. Called after a payment webhook or a water charge.
+        public async Task SyncInvoiceFromUnitPaymentsAsync(long unitPaymentsId)
         {
             var invoice = await _invoiceRepository.GetByUnitPaymentsIdAsync(unitPaymentsId);
             if (invoice == null)
@@ -127,8 +111,19 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                 return;
             }
 
-            invoice.Status = status;
-            await _invoiceRepository.UpdateStatusAsync(invoice);
+            var unitPayments = await _unitPaymentsRepository.GetByIdAsync(unitPaymentsId);
+            if (unitPayments == null)
+            {
+                _logger.LogWarning("UnitPayments {UnitPaymentsId} not found while syncing invoice {InvoiceId}", unitPaymentsId, invoice.Id);
+                return;
+            }
+
+            invoice.RentAmount = unitPayments.RentAmount;
+            invoice.WaterBillAmount = unitPayments.WaterAmount;
+            invoice.TotalAmount = unitPayments.ExpectedAmount;
+            invoice.Status = unitPayments.Status;
+
+            await _invoiceRepository.UpdateFromUnitPaymentsAsync(invoice);
         }
 
         public async Task<InvoiceDto?> GetByIdAsync(long id)

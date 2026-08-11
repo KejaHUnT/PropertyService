@@ -116,14 +116,15 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
         {
             var payment = await _db.UnitPayments
                 .FirstOrDefaultAsync(x => x.UnitId == unitId && x.PeriodMonth == month && x.PeriodYear == year);
-
+        
             if (payment == null)
                 return null; // no payment row yet for this period — caller (WaterBillingService) records this as unapplied
-
+        
             payment.WaterAmount = waterAmount;
             payment.WaterBillId = waterBillId;
             payment.RecalculateExpectedAmount();
-
+            payment.RecalculateStatus(); // ExpectedAmount just changed — Status must be re-checked against it
+        
             await _db.SaveChangesAsync();
             return payment;
         }

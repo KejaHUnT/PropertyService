@@ -3,6 +3,7 @@ using KejaHUnt_PropertiesAPI.Models.Domain;
 using KejaHUnt_PropertiesAPI.Models.Dto;
 using KejaHUnt_PropertiesAPI.Models.Enums;
 using KejaHUnt_PropertiesAPI.Repositories.Interface;
+using KejaHUnt_PropertiesAPI.Services.Invoices;
 using Microsoft.EntityFrameworkCore;
 
 namespace KejaHUnt_PropertiesAPI.Services.WaterBills;
@@ -14,19 +15,22 @@ public class WaterBillingService : IWaterBillingService
         private readonly IWaterMeterReadingRepository _readingRepository;
         private readonly IWaterBillRepository _billRepository;
         private readonly IUnitPaymentsRepository _unitPaymentsRepository;
+        private readonly IInvoiceService _invoiceService;
 
         public WaterBillingService(
             ApplicationDbContext db,
             IWaterRateRepository rateRepository,
             IWaterMeterReadingRepository readingRepository,
             IWaterBillRepository billRepository,
-            IUnitPaymentsRepository unitPaymentsRepository)
+            IUnitPaymentsRepository unitPaymentsRepository,
+            IInvoiceService invoiceService)
         {
             _db = db;
             _rateRepository = rateRepository;
             _readingRepository = readingRepository;
             _billRepository = billRepository;
             _unitPaymentsRepository = unitPaymentsRepository;
+            _invoiceService = invoiceService;
         }
 
         public async Task<WaterRate> SetPropertyRateAsync(SetWaterRateDto dto)
@@ -50,7 +54,6 @@ public class WaterBillingService : IWaterBillingService
 
             var unitIds = request.Readings.Select(r => r.UnitId).Distinct().ToList();
 
-            // Bulk-load everything needed up front — no per-unit round trips inside the loop.
             var units = await _db.Units
                 .Where(u => unitIds.Contains(u.Id) && u.PropertyId == request.PropertyId)
                 .ToDictionaryAsync(u => u.Id);
@@ -62,10 +65,15 @@ public class WaterBillingService : IWaterBillingService
 
             var results = new List<WaterBillResultDto>();
 
+            // Invoice syncs happen after the transaction commits — don't want a failed
+            // invoice sync to roll back an otherwise-successful batch of water bills.
+            var unitPaymentsIdsToSync = new List<long>();
+
             var strategy = _db.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {
                 await using var transaction = await _db.Database.BeginTransactionAsync();
+                unitPaymentsIdsToSync.Clear();
 
                 foreach (var input in request.Readings)
                 {
@@ -133,6 +141,9 @@ public class WaterBillingService : IWaterBillingService
 
                     var wasApplied = appliedPayment != null;
 
+                    if (wasApplied)
+                        unitPaymentsIdsToSync.Add(appliedPayment!.Id);
+
                     results.Add(new WaterBillResultDto(
                         input.UnitId, unit.DoorNumber, unitsConsumed, billAmount, false, wasApplied,
                         wasApplied ? null : "No payment record exists yet for this period — bill generated but not yet applied to an expected amount."));
@@ -140,6 +151,12 @@ public class WaterBillingService : IWaterBillingService
 
                 await transaction.CommitAsync();
             });
+
+            // Sync each affected invoice now that the water bill batch has committed.
+            foreach (var unitPaymentsId in unitPaymentsIdsToSync)
+            {
+                await _invoiceService.SyncInvoiceFromUnitPaymentsAsync(unitPaymentsId);
+            }
 
             return new GenerateWaterBillsResponseDto(
                 BillsGenerated: results.Count(r => r.Error is null && !r.IsBaseline),
