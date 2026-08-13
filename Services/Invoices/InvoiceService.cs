@@ -95,7 +95,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                         WaterBillAmount = unitPayments.WaterAmount,
                         TotalAmount = unitPayments.ExpectedAmount,
                         Status = unitPayments.Status,
-                        DueDate = new DateTime(periodYear, periodMonth, 10)
+                        DueDate = DateTime.SpecifyKind(new DateTime(periodYear, periodMonth, 10), DateTimeKind.Utc)
                     };
         
                     await _invoiceRepository.CreateAsync(invoice);
