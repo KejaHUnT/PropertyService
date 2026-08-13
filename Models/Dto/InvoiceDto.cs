@@ -5,6 +5,7 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
     public class InvoiceDto
     {
         public long Id { get; set; }
+        public string InvoiceNumber { get; set; }
 
         public long UnitId { get; set; }
         public string DoorNumber { get; set; }

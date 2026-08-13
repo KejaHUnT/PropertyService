@@ -98,5 +98,11 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Implementation
             return await _db.Invoices
                 .FirstOrDefaultAsync(x => x.UnitPaymentsId == unitPaymentsId);
         }
+
+        public async Task<int> GetCountByPeriodAsync(int month, int year)
+        {
+            return await _db.Invoices
+                .CountAsync(x => x.PeriodMonth == month && x.PeriodYear == year);
+        }        
     }
 }

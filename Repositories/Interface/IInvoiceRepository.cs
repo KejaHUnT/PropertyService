@@ -5,6 +5,7 @@ namespace KejaHUnt_PropertiesAPI.Repositories.Interface
     public interface IInvoiceRepository
     {
         Task<Invoice> CreateAsync(Invoice invoice);
+        Task<int> GetCountByPeriodAsync(int month, int year);
         Task<Invoice> UpdateFromUnitPaymentsAsync(Invoice invoice);
         Task<Invoice?> GetByIdAsync(long id);
         Task<List<Invoice>> GetAllAsync();

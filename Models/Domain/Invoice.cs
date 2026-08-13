@@ -7,6 +7,8 @@ namespace KejaHUnt_PropertiesAPI.Models.Domain
     {
         public long Id { get; set; }
 
+        public string InvoiceNumber { get; set; } 
+
         public long UnitId { get; set; }
         public Unit Unit { get; set; }
 

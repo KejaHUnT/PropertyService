@@ -45,6 +45,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
         {
             var units = await _unitRepository.GetAllAsync();
             var occupiedUnits = units.Where(u => u.Status != UnitStatus.Vacant).ToList();
+            var sequence = await _invoiceRepository.GetCountByPeriodAsync(periodMonth, periodYear);
         
             foreach (var unit in occupiedUnits)
             {
@@ -83,8 +84,10 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                         unitPayments = await _unitPaymentsRepository.CreateAsync(unitPayments);
                     }
         
+                    sequence++;
                     var invoice = new Invoice
                     {
+                        InvoiceNumber = $"KH-{periodYear:D4}{periodMonth:D2}-{sequence:D4}",
                         UnitId = unit.Id,
                         PropertyId = unit.PropertyId,
                         TenantId = tenant.Id,
@@ -182,7 +185,8 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                 TotalAmount = invoice.TotalAmount,
                 Status = invoice.Status,
                 DueDate = invoice.DueDate,
-                CreatedAt = invoice.CreatedAt
+                CreatedAt = invoice.CreatedAt,
+                InvoiceNumber = invoice.InvoiceNumber
             };
         }
     }
