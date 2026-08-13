@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using KejaHUnt_PropertiesAPI.Models.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace KejaHUnt_PropertiesAPI.Models.Domain
 {
@@ -7,6 +8,7 @@ namespace KejaHUnt_PropertiesAPI.Models.Domain
     {
         public long Id { get; set; }
 
+        [Required]
         public string InvoiceNumber { get; set; } 
 
         public long UnitId { get; set; }
