@@ -14,19 +14,23 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
         private readonly ITenantServiceClient _tenantServiceClient;
         private readonly ILogger<InvoiceService> _logger;
 
+        private readonly IPaymentTransactionRepository _paymentTransactionRepository;
+        
         public InvoiceService(
             IInvoiceRepository invoiceRepository,
             IUnitPaymentsRepository unitPaymentsRepository,
             IUnitRepository unitRepository,
+            IPaymentTransactionRepository paymentTransactionRepository,
             ITenantServiceClient tenantServiceClient,
             ILogger<InvoiceService> logger)
         {
             _invoiceRepository = invoiceRepository;
             _unitPaymentsRepository = unitPaymentsRepository;
             _unitRepository = unitRepository;
+            _paymentTransactionRepository = paymentTransactionRepository;
             _tenantServiceClient = tenantServiceClient;
             _logger = logger;
-        }
+        }        
 
         // RUNS ON THE 28TH — generates NEXT month's invoice (rent only) for every occupied unit
         public async Task GenerateMonthlyInvoicesAsync()
@@ -136,42 +140,58 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
 
             await _invoiceRepository.UpdateFromUnitPaymentsAsync(invoice);
         }
-
+        
         public async Task<InvoiceDto?> GetByIdAsync(long id)
         {
             var invoice = await _invoiceRepository.GetByIdAsync(id);
-            return invoice == null ? null : MapToDto(invoice);
+            return invoice == null ? null : await MapToDtoAsync(invoice);
         }
-
+        
         public async Task<List<InvoiceDto>> GetAllAsync()
         {
             var invoices = await _invoiceRepository.GetAllAsync();
-            return invoices.Select(MapToDto).ToList();
+            return (await Task.WhenAll(invoices.Select(MapToDtoAsync))).ToList();
         }
-
+        
         public async Task<List<InvoiceDto>> GetByPropertyIdAsync(long propertyId)
         {
             var invoices = await _invoiceRepository.GetByPropertyIdAsync(propertyId);
-            return invoices.Select(MapToDto).ToList();
+            return (await Task.WhenAll(invoices.Select(MapToDtoAsync))).ToList();
         }
-
+        
         public async Task<List<InvoiceDto>> GetByUnitIdAsync(long unitId)
         {
             var invoices = await _invoiceRepository.GetByUnitIdAsync(unitId);
-            return invoices.Select(MapToDto).ToList();
+            return (await Task.WhenAll(invoices.Select(MapToDtoAsync))).ToList();
         }
-
+        
         public async Task<List<InvoiceDto>> GetByTenantIdAsync(long tenantId)
         {
             var invoices = await _invoiceRepository.GetByTenantIdAsync(tenantId);
-            return invoices.Select(MapToDto).ToList();
+            return (await Task.WhenAll(invoices.Select(MapToDtoAsync))).ToList();
         }
 
-        private static InvoiceDto MapToDto(Invoice invoice)
+        private async Task<InvoiceDto> MapToDtoAsync(Invoice invoice)
         {
+            var transactions = await _paymentTransactionRepository.GetByUnitPaymentIdAsync(invoice.UnitPaymentsId);
+            var successfulTransactions = transactions
+                .Where(t => t.Status == PaymentTransactionStatus.Success) // confirm exact enum member name
+                .OrderBy(t => t.CreatedAt)
+                .Select(t => new PaymentTransactionDto
+                {
+                    Id = t.Id,
+                    ExternalPaymentId = t.ExternalPaymentId,
+                    Amount = t.Amount,
+                    Status = t.Status,
+                    Reference = t.Reference,
+                    CreatedAt = t.CreatedAt
+                })
+                .ToList();
+        
             return new InvoiceDto
             {
                 Id = invoice.Id,
+                InvoiceNumber = invoice.InvoiceNumber,
                 UnitId = invoice.UnitId,
                 DoorNumber = invoice.Unit?.DoorNumber,
                 PropertyId = invoice.PropertyId,
@@ -186,7 +206,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                 Status = invoice.Status,
                 DueDate = invoice.DueDate,
                 CreatedAt = invoice.CreatedAt,
-                InvoiceNumber = invoice.InvoiceNumber
+                Transactions = successfulTransactions
             };
         }
     }

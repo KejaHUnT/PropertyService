@@ -28,5 +28,7 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
 
         public DateTime DueDate { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public List<PaymentTransactionDto> Transactions { get; set; } = new();
     }
 }
