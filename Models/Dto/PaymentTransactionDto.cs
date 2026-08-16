@@ -13,5 +13,6 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
         public PaymentTransactionStatus Status { get; set; }
         public string? Reference { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? MpesaCode { get; set; }
     }
 }

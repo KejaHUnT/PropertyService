@@ -332,7 +332,8 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 UnitPaymentId = unitPayment.Id,
                 Amount = dto.Amount,
                 Status = PaymentTransactionStatus.Initialized,
-                Reference = reference
+                Reference = reference,
+                MpesaCode = dto.PaymentType == "mpesa" ? dto.MpesaCode : null
             };
             await _transactionRepo.CreateAsync(transaction);
 
@@ -522,6 +523,8 @@ namespace KejaHUnt_PropertiesAPI.Services.Payments
                 _logger.LogError("Approve manual payment failed for {Reference}: {Body}", transaction.Reference, errorBody);
                 throw new Exception($"Payment API error: {errorBody}");
             }
+            transaction.MpesaCode = dto.MpesaCode;
+            await _transactionRepo.UpdateAsync(transaction);
 
             var refreshed = await _unitPaymentsRepo.GetByIdAsync(unitPaymentId);
             return _mapper.Map<UnitPaymentsDto>(refreshed);

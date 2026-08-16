@@ -184,6 +184,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                     Amount = t.Amount,
                     Status = t.Status,
                     Reference = t.Reference,
+                    MpesaCode = t.MpesaCode,
                     CreatedAt = t.CreatedAt
                 })
                 .ToList();
