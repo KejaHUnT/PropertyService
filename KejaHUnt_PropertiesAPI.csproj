@@ -17,10 +17,14 @@
     <PackageReference Include="Minio" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <PackageReference Include="QuestPDF" Version="2026.7.3" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.58" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
-
+  
+  <ItemGroup>
+    <None Include="Assets\kejahunt-logo.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>  
 </Project>

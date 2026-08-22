@@ -3,6 +3,7 @@ using KejaHUnt_PropertiesAPI.Models.Dto;
 using KejaHUnt_PropertiesAPI.Models.Enums;
 using KejaHUnt_PropertiesAPI.Repositories.Interface;
 using KejaHUnt_PropertiesAPI.Services.Tenants;
+using QuestPDF.Fluent;
 
 namespace KejaHUnt_PropertiesAPI.Services.Invoices
 {
@@ -11,11 +12,10 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IUnitPaymentsRepository _unitPaymentsRepository;
         private readonly IUnitRepository _unitRepository;
+        private readonly IPaymentTransactionRepository _paymentTransactionRepository;
         private readonly ITenantServiceClient _tenantServiceClient;
         private readonly ILogger<InvoiceService> _logger;
 
-        private readonly IPaymentTransactionRepository _paymentTransactionRepository;
-        
         public InvoiceService(
             IInvoiceRepository invoiceRepository,
             IUnitPaymentsRepository unitPaymentsRepository,
@@ -30,7 +30,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
             _paymentTransactionRepository = paymentTransactionRepository;
             _tenantServiceClient = tenantServiceClient;
             _logger = logger;
-        }        
+        }
 
         // RUNS ON THE 28TH — generates NEXT month's invoice (rent only) for every occupied unit
         public async Task GenerateMonthlyInvoicesAsync()
@@ -38,19 +38,20 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
             var nextPeriod = DateTime.UtcNow.AddMonths(1);
             await GenerateForPeriodInternalAsync(nextPeriod.Month, nextPeriod.Year);
         }
-        
+
         // Same generation logic, targeted at an explicit period — for one-off backfills
         public async Task GenerateInvoicesForPeriodAsync(int periodMonth, int periodYear)
         {
             await GenerateForPeriodInternalAsync(periodMonth, periodYear);
         }
-        
+
         private async Task GenerateForPeriodInternalAsync(int periodMonth, int periodYear)
         {
             var units = await _unitRepository.GetAllAsync();
             var occupiedUnits = units.Where(u => u.Status != UnitStatus.Vacant).ToList();
+
             var sequence = await _invoiceRepository.GetCountByPeriodAsync(periodMonth, periodYear);
-        
+
             foreach (var unit in occupiedUnits)
             {
                 try
@@ -61,14 +62,14 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                         _logger.LogInformation("Invoice already exists for unit {UnitId} for {Month}/{Year}, skipping", unit.Id, periodMonth, periodYear);
                         continue;
                     }
-        
+
                     var tenant = await _tenantServiceClient.GetActiveTenantByUnitIdAsync(unit.Id);
                     if (tenant == null)
                     {
                         _logger.LogInformation("No active tenant for unit {UnitId}, skipping invoice generation", unit.Id);
                         continue;
                     }
-        
+
                     var unitPayments = await _unitPaymentsRepository.GetByUnitAndPeriodAsync(unit.Id, periodMonth, periodYear);
                     if (unitPayments == null)
                     {
@@ -87,8 +88,9 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                         unitPayments.RecalculateExpectedAmount();
                         unitPayments = await _unitPaymentsRepository.CreateAsync(unitPayments);
                     }
-        
+
                     sequence++;
+
                     var invoice = new Invoice
                     {
                         InvoiceNumber = $"KH-{periodYear:D4}{periodMonth:D2}-{sequence:D4}",
@@ -104,7 +106,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                         Status = unitPayments.Status,
                         DueDate = DateTime.SpecifyKind(new DateTime(periodYear, periodMonth, 10), DateTimeKind.Utc)
                     };
-        
+
                     await _invoiceRepository.CreateAsync(invoice);
                     _logger.LogInformation("Generated invoice for unit {UnitId}, tenant {TenantId}, {Month}/{Year}", unit.Id, tenant.Id, periodMonth, periodYear);
                 }
@@ -140,31 +142,31 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
 
             await _invoiceRepository.UpdateFromUnitPaymentsAsync(invoice);
         }
-        
+
         public async Task<InvoiceDto?> GetByIdAsync(long id)
         {
             var invoice = await _invoiceRepository.GetByIdAsync(id);
             return invoice == null ? null : await MapToDtoAsync(invoice);
         }
-        
+
         public async Task<List<InvoiceDto>> GetAllAsync()
         {
             var invoices = await _invoiceRepository.GetAllAsync();
             return (await Task.WhenAll(invoices.Select(MapToDtoAsync))).ToList();
         }
-        
+
         public async Task<List<InvoiceDto>> GetByPropertyIdAsync(long propertyId)
         {
             var invoices = await _invoiceRepository.GetByPropertyIdAsync(propertyId);
             return (await Task.WhenAll(invoices.Select(MapToDtoAsync))).ToList();
         }
-        
+
         public async Task<List<InvoiceDto>> GetByUnitIdAsync(long unitId)
         {
             var invoices = await _invoiceRepository.GetByUnitIdAsync(unitId);
             return (await Task.WhenAll(invoices.Select(MapToDtoAsync))).ToList();
         }
-        
+
         public async Task<List<InvoiceDto>> GetByTenantIdAsync(long tenantId)
         {
             var invoices = await _invoiceRepository.GetByTenantIdAsync(tenantId);
@@ -175,7 +177,7 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
         {
             var transactions = await _paymentTransactionRepository.GetByUnitPaymentIdAsync(invoice.UnitPaymentsId);
             var successfulTransactions = transactions
-                .Where(t => t.Status == PaymentTransactionStatus.Success) // confirm exact enum member name
+                .Where(t => t.Status == PaymentTransactionStatus.Success)
                 .OrderBy(t => t.CreatedAt)
                 .Select(t => new PaymentTransactionDto
                 {
@@ -188,7 +190,9 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                     CreatedAt = t.CreatedAt
                 })
                 .ToList();
-        
+
+            var tenant = await _tenantServiceClient.GetTenantByIdAsync(invoice.TenantId);
+
             return new InvoiceDto
             {
                 Id = invoice.Id,
@@ -197,7 +201,9 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                 DoorNumber = invoice.Unit?.DoorNumber,
                 PropertyId = invoice.PropertyId,
                 PropertyName = invoice.Property?.Name,
+                PropertyLocation = invoice.Property?.Location,
                 TenantId = invoice.TenantId,
+                TenantName = tenant?.FullName,
                 UnitPaymentsId = invoice.UnitPaymentsId,
                 PeriodMonth = invoice.PeriodMonth,
                 PeriodYear = invoice.PeriodYear,
@@ -210,5 +216,31 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
                 Transactions = successfulTransactions
             };
         }
+        public async Task<(byte[] Bytes, string FileName)?> GenerateInvoicePdfAsync(long id)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            if (invoice == null) return null;
+        
+            var dto = await MapToDtoAsync(invoice);
+        
+            byte[]? logoBytes = null;
+            var logoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "kejahunt-logo.png");
+            if (File.Exists(logoPath))
+            {
+                logoBytes = await File.ReadAllBytesAsync(logoPath);
+            }
+            else
+            {
+                _logger.LogWarning("Logo file not found at {Path}", logoPath);
+            }
+        
+            var document = new InvoicePdfDocument(dto, logoBytes);
+            var pdfBytes = document.GeneratePdf();
+        
+            var periodLabel = new DateTime(dto.PeriodYear, dto.PeriodMonth, 1).ToString("MMMM-yyyy");
+            var fileName = $"{periodLabel}.pdf"; // e.g. "August-2026.pdf"
+        
+            return (pdfBytes, fileName);
+        }    
     }
 }

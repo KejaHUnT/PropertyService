@@ -101,7 +101,31 @@ namespace KejaHUnt_PropertiesAPI.Controllers
                 data = result
             });
         }
-
+        // GET INVOICE AS PDF — streams the generated document straight to the client
+        [HttpGet("{id:long}/pdf")]
+        public async Task<IActionResult> GetPdf(long id)
+        {
+            try
+            {
+                var result = await _invoiceService.GenerateInvoicePdfAsync(id);
+        
+                if (result == null)
+                    return NotFound($"Invoice with ID {id} not found");
+        
+                return File(result.Value.Bytes, "application/pdf", result.Value.FileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating PDF for invoice {InvoiceId}", id);
+        
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error generating invoice PDF",
+                    error = ex.Message
+                });
+            }
+        }
         // GET BY PROPERTY
         [HttpGet("property/{propertyId:long}")]
         public async Task<IActionResult> GetByProperty(long propertyId)

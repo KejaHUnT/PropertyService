@@ -13,8 +13,11 @@ using KejaHUnt_PropertiesAPI.Services.Invoices;
 using Minio; // Minio
 using System.Text.Json.Serialization;
 using KejaHUnt_PropertiesAPI.Services.WaterBills;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var logPath = builder.Configuration.GetValue<string>("LogPath");
 Log.Logger = new LoggerConfiguration()

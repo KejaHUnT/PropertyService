@@ -30,5 +30,8 @@ namespace KejaHUnt_PropertiesAPI.Models.Dto
         public DateTime CreatedAt { get; set; }
 
         public List<PaymentTransactionDto> Transactions { get; set; } = new();
+
+        public string TenantName { get; set; }
+        public string PropertyLocation { get; set; }
     }
 }

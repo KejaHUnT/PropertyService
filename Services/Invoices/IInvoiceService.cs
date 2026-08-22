@@ -16,5 +16,6 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
         Task<List<Models.Dto.InvoiceDto>> GetByPropertyIdAsync(long propertyId);
         Task<List<Models.Dto.InvoiceDto>> GetByUnitIdAsync(long unitId);
         Task<List<Models.Dto.InvoiceDto>> GetByTenantIdAsync(long tenantId);
+        Task<(byte[] Bytes, string FileName)?> GenerateInvoicePdfAsync(long id);
     }
 }
