@@ -236,9 +236,8 @@ namespace KejaHUnt_PropertiesAPI.Services.Invoices
         
             var document = new InvoicePdfDocument(dto, logoBytes);
             var pdfBytes = document.GeneratePdf();
-        
-            var periodLabel = new DateTime(dto.PeriodYear, dto.PeriodMonth, 1).ToString("MMMM-yyyy");
-            var fileName = $"{periodLabel}.pdf"; // e.g. "August-2026.pdf"
+
+            var fileName = $"{dto.InvoiceNumber}.pdf"; // e.g. "KH-202608-0019.pdf"
         
             return (pdfBytes, fileName);
         }    
